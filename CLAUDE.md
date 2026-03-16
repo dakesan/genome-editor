@@ -25,6 +25,31 @@
 - Hooks: camelCase with "use" prefix
 - Tests: co-located .test.ts(x)
 
+## Spec-Driven Development
+
+### Document Roles
+
+| Document | Role | Authority |
+|----------|------|-----------|
+| spec.md | Technical specification: types, APIs, data flow, architecture | Source of truth for HOW to build |
+| plan.md | Roadmap: phases, milestones, success criteria, risk management | Source of truth for WHAT and WHEN |
+| todo.md | Task tracking: granular checklist derived from plan.md | Execution progress tracker |
+
+### Workflow Rules
+
+1. Before implementing, ALWAYS read spec.md for the relevant module's API contracts and types
+2. Read plan.md to understand the current phase's goals and success criteria
+3. Pick tasks from todo.md — implement what spec.md defines, in the order plan.md prioritizes
+4. If implementation reveals a spec gap, update spec.md FIRST, then write the code
+5. After completing tasks, update todo.md checkboxes (never skip this step)
+6. All three documents must stay in sync — contradictions are bugs
+
+### Agent Responsibilities
+
+- Every agent MUST read spec.md before writing any module it covers
+- Never deviate from spec.md types/APIs without updating the spec first
+- Leader agent is responsible for cross-document consistency
+
 ## Multi-Agent Workflow
 
 ### File Ownership (prevent merge conflicts)
