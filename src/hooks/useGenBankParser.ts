@@ -1,11 +1,9 @@
 import { useCallback, useState } from "react";
 import seqparse from "seqparse";
+import { getBackend } from "../backend";
 import type { ParsedSequence } from "../types/sequence";
-import type { WasmParsedSequence } from "../types/wasm";
-import { isWasmError } from "../types/wasm";
-import { ensureWasmInit } from "../wasm/init";
 
-type ParserBackend = "wasm" | "js";
+type ParserBackend = "tauri" | "wasm" | "js";
 
 interface UseGenBankParserReturn {
   parsedSequence: ParsedSequence | null;
@@ -16,53 +14,12 @@ interface UseGenBankParserReturn {
   backend: ParserBackend;
 }
 
-/**
- * Detect file format from content.
- */
 function detectFormat(content: string): "genbank" | "fasta" {
   const trimmed = content.trimStart();
   if (trimmed.startsWith("LOCUS") || trimmed.startsWith("locus")) {
     return "genbank";
   }
   return "fasta";
-}
-
-/**
- * Convert WASM parsed result to the app's ParsedSequence type.
- */
-function toAppSequence(wasm: WasmParsedSequence): ParsedSequence {
-  return {
-    name: wasm.name,
-    seq: wasm.seq,
-    annotations: wasm.annotations.map((a) => ({
-      name: a.name,
-      start: a.start,
-      end: a.end,
-      direction: a.direction,
-      color: a.color,
-      type: a.type,
-    })),
-  };
-}
-
-/**
- * Try parsing with WASM first, fall back to JS (seqparse) on failure.
- */
-async function parseWithWasm(fileContent: string): Promise<ParsedSequence> {
-  await ensureWasmInit();
-  const wasm = await import("../../pkg/genome_editor_wasm.js");
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(fileContent);
-
-  const format = detectFormat(fileContent);
-  const result =
-    format === "genbank" ? wasm.parse_genbank_wasm(bytes) : wasm.parse_fasta_wasm(bytes);
-
-  if (isWasmError(result)) {
-    throw new Error(result.error);
-  }
-
-  return toAppSequence(result as WasmParsedSequence);
 }
 
 async function parseWithJs(fileContent: string): Promise<ParsedSequence> {
@@ -91,10 +48,14 @@ export function useGenBankParser(): UseGenBankParserReturn {
     setIsLoading(true);
     setError(null);
     try {
-      // Try WASM first.
-      const result = await parseWithWasm(fileContent);
+      // Try backend (Tauri IPC or WASM) first.
+      const b = await getBackend();
+      await b.init();
+      const format = detectFormat(fileContent);
+      const data = new TextEncoder().encode(fileContent);
+      const result = await b.parseFile(data, format);
       setParsedSequence(result);
-      setBackend("wasm");
+      setBackend(b.name);
     } catch {
       // Fall back to JS parser.
       try {

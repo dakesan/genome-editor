@@ -1,8 +1,8 @@
-// Hook for finding restriction enzyme cut sites via WASM.
+// Hook for finding restriction enzyme cut sites via backend abstraction.
 
 import { useCallback, useEffect, useState } from "react";
+import { getBackend } from "../backend";
 import type { WasmCutSite } from "../types/wasm";
-import { ensureWasmInit } from "../wasm/init";
 
 interface UseEnzymesReturn {
   cutSites: WasmCutSite[];
@@ -26,14 +26,14 @@ export function useEnzymes(
     let cancelled = false;
     (async () => {
       try {
-        await ensureWasmInit();
-        const wasm = await import("../../pkg/genome_editor_wasm.js");
-        const names = wasm.get_enzyme_names() as string[];
+        const backend = await getBackend();
+        await backend.init();
+        const names = await backend.getEnzymeNames();
         if (!cancelled) {
           setAvailableEnzymes(names);
         }
       } catch {
-        // WASM not available; leave empty.
+        // Backend not available; leave empty.
       }
     })();
     return () => {
@@ -51,19 +51,10 @@ export function useEnzymes(
     setIsLoading(true);
     setError(null);
     try {
-      await ensureWasmInit();
-      const wasm = await import("../../pkg/genome_editor_wasm.js");
-      const result = wasm.find_cut_sites_wasm(
-        sequence,
-        isCircular,
-        JSON.stringify(selectedEnzymes),
-      ) as WasmCutSite[] | { error: string };
-
-      if (result && "error" in result) {
-        throw new Error((result as { error: string }).error);
-      }
-
-      setCutSites(result as WasmCutSite[]);
+      const backend = await getBackend();
+      await backend.init();
+      const result = await backend.findCutSites(sequence, isCircular, selectedEnzymes);
+      setCutSites(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cut site search failed");
       setCutSites([]);

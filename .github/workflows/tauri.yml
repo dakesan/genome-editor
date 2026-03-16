@@ -1,0 +1,97 @@
+name: Tauri Build
+
+on:
+  push:
+    paths:
+      - 'src-tauri/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - 'Cargo.toml'
+      - '.github/workflows/tauri.yml'
+  pull_request:
+    paths:
+      - 'src-tauri/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - 'Cargo.toml'
+      - '.github/workflows/tauri.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+          - platform: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }},wasm32-unknown-unknown
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        run: wasm-pack build crates/wasm --target web --out-dir ../../pkg
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Test frontend
+        run: npm run test
+
+      - name: Clippy (Tauri crate)
+        run: cargo clippy -p genome-editor-tauri -- -D warnings
+
+      - name: Build Tauri app
+        run: npx tauri build --target ${{ matrix.target }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ""
+
+      - name: Check bundle size (macOS)
+        if: matrix.platform == 'macos-latest' && matrix.target == 'aarch64-apple-darwin'
+        run: |
+          APP_PATH=$(find target -name "*.app" -path "*/bundle/macos/*" | head -1)
+          if [ -n "$APP_PATH" ]; then
+            SIZE=$(du -sm "$APP_PATH" | cut -f1)
+            echo "App bundle size: ${SIZE}MB"
+            if [ "$SIZE" -gt 30 ]; then
+              echo "::warning::Bundle size ${SIZE}MB exceeds 30MB target"
+            fi
+          fi

@@ -125,36 +125,50 @@
 
 依存関係: Phase 1 完了後に開始します。
 
-### Tauri プロジェクト構築
+### Tauri プロジェクト構築（Wave 1）
 
-- [ ] P0: `tauri init` によるプロジェクトスキャフォールド
-- [ ] P0: tauri.conf.json 設定（ウィンドウサイズ、権限、アイコン）
-- [ ] P0: Phase 1 の Rust crates を Tauri バックエンドに統合
-- [ ] P1: 開発用ホットリロード設定
+- [x] P0: Tauri v2 プロジェクトスキャフォールド（src-tauri/）
+- [x] P0: tauri.conf.json 設定（ウィンドウサイズ、権限、アイコン）
+- [x] P0: Phase 1 の Rust crates を Tauri バックエンドに統合（path 依存）
+- [x] P0: vite.config.ts Tauri 対応（clearScreen, host, envPrefix）
+- [x] P1: Tauri プラグイン導入（dialog, fs, window-state）
+- [x] P1: capabilities/default.json（dialog, fs 権限設定）
 
-### Tauri コマンド実装
+### Tauri コマンド実装（Wave 2）
 
-- [ ] P0: open_file コマンド（ネイティブファイルダイアログ）
-- [ ] P0: save_file コマンド
-- [ ] P0: compute_cut_sites コマンド
-- [ ] P0: detect_orfs コマンド
-- [ ] P1: export_file コマンド（複数フォーマット対応）
-- [ ] P1: align_sequences コマンド
+- [x] P0: open_file コマンド（GenBank/FASTA パース）
+- [x] P0: save_file コマンド（GenBank 形式で保存）
+- [x] P0: compute_cut_sites コマンド（enzyme crate 直接呼び出し）
+- [x] P0: get_enzyme_names コマンド
+- [x] P0: detect_orfs コマンド（orf crate 直接呼び出し）
+- [x] P1: align_sequences コマンド（alignment crate 直接呼び出し）
+- [x] P1: AppState による EnzymeDatabase シングルトン管理
 - [ ] P2: ファイル監視（watchdog）イベント
 
-### Frontend 適応
+### Frontend Backend Abstraction（Wave 3）
 
-- [ ] P0: WASM 呼び出しから Tauri invoke への切り替えレイヤー
-- [ ] P0: ネイティブメニューバーの実装
-- [ ] P1: キーボードショートカット（Cmd+O, Cmd+S 等）
-- [ ] P1: ドラッグ & ドロップによるファイル読み込み
+- [x] P0: GenomeBackend インターフェース定義（src/backend/types.ts）
+- [x] P0: 環境検出（isTauri）+ getBackend() シングルトン（src/backend/index.ts）
+- [x] P0: WasmBackend 実装（既存 WASM ロジック抽出）
+- [x] P0: TauriBackend 実装（invoke() ラッパー）
+- [x] P0: hooks リファクタリング（useGenBankParser, useEnzymes, useOrfs）
+- [x] P1: 既存テスト 23 件全パス維持（jsdom → WASM path → JS fallback）
+
+### 統合 + ネイティブ体験（Wave 4）
+
+- [x] P0: ネイティブメニューバー（File: Open/Save, Edit, View）
+- [x] P1: キーボードショートカット（Cmd+O, Cmd+S）
+- [x] P1: ドラッグ & ドロップによるファイル読み込み
+- [x] P1: Window state プラグイン統合（位置・サイズ記憶）
+- [x] P1: index.html タイトル "Genome Editor" に変更
 - [ ] P2: 最近開いたファイル履歴
 
-### ビルド・配布
+### ビルド・CI（Wave 5）
 
-- [ ] P0: macOS ビルド＋コード署名
-- [ ] P1: Windows ビルド（NSIS インストーラー）
-- [ ] P1: Linux ビルド（AppImage / deb）
+- [x] P0: GitHub Actions Tauri ビルド CI（macOS + Linux）
+- [x] P0: rust.yml パス更新（src-tauri 追加）
+- [ ] P1: macOS .app ビルド＋サイズ確認（< 15MB）
+- [ ] P1: macOS コード署名（Apple Developer Program 必要）
 - [ ] P2: 自動アップデート機能（tauri-plugin-updater）
 - [ ] P2: GitHub Releases への自動デプロイ（CI/CD）
 

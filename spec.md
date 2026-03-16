@@ -40,13 +40,24 @@ genome-editor/
 ├── src-tauri/          # Tauri application
 │   ├── src/
 │   │   ├── main.rs
-│   │   └── commands.rs # Tauri command handlers
+│   │   ├── lib.rs      # Builder setup (plugins, commands, menu)
+│   │   ├── state.rs    # AppState (EnzymeDatabase singleton)
+│   │   └── commands/   # Tauri command handlers
+│   │       ├── file.rs
+│   │       ├── enzyme.rs
+│   │       ├── orf.rs
+│   │       └── alignment.rs
 │   ├── Cargo.toml
+│   ├── capabilities/   # Tauri v2 permissions
 │   └── tauri.conf.json
 ├── src/                # React frontend
+│   ├── backend/        # Backend abstraction (Tauri/WASM)
+│   │   ├── types.ts    # GenomeBackend interface
+│   │   ├── index.ts    # Environment detection + getBackend()
+│   │   ├── tauri.ts    # TauriBackend (invoke wrapper)
+│   │   └── wasm.ts     # WasmBackend (WASM bindings)
 │   ├── components/
 │   ├── hooks/
-│   ├── stores/
 │   └── wasm/           # WASM loader and bindings
 ├── plan.md
 ├── spec.md
@@ -207,64 +218,83 @@ pub fn find_orfs_wasm(
 
 ## Tauri Command API（Phase 2）
 
-Tauri のコマンドシステムを使い、フロントエンドから Rust バックエンドを呼び出します。
+Tauri v2 のコマンドシステムを使い、フロントエンドから Rust バックエンドを呼び出します。既存 crate を直接再利用し、DTO は WASM API と同じ JSON 構造です。
+
+### State 管理
+
+```rust
+pub struct AppState {
+    pub enzyme_db: EnzymeDatabase,  // アプリ起動時に一度だけ構築
+}
+```
 
 ### ファイル操作
 
 ```rust
 #[tauri::command]
-async fn open_file(path: String) -> Result<SequenceFile, String>;
+async fn open_file(path: String) -> Result<SequenceFileDto, String>;
 
 #[tauri::command]
-async fn save_file(path: String, data: SequenceFile) -> Result<(), String>;
-
-#[tauri::command]
-async fn export_file(
-    path: String,
-    format: ExportFormat, // GenBank, FASTA, SnapGene
-    data: SequenceFile,
-) -> Result<(), String>;
+async fn save_file(path: String, data: SequenceFileDto) -> Result<(), String>;
 ```
 
 ### 計算処理
 
 ```rust
 #[tauri::command]
-async fn compute_cut_sites(
-    sequence: SequenceData,
+fn compute_cut_sites(
+    seq: String,
+    is_circular: bool,
     enzymes: Vec<String>,
-) -> Result<Vec<CutSite>, String>;
+    state: State<AppState>,
+) -> Result<Vec<CutSiteDto>, String>;
 
 #[tauri::command]
-async fn detect_orfs(
-    sequence: SequenceData,
+fn get_enzyme_names(state: State<AppState>) -> Vec<String>;
+
+#[tauri::command]
+fn detect_orfs(
+    seq: String,
+    is_circular: bool,
     min_length: usize,
-) -> Result<Vec<Orf>, String>;
+) -> Result<Vec<OrfDto>, String>;
 
 #[tauri::command]
-async fn align_sequences(
-    query: String,
-    target: String,
-) -> Result<AlignmentResult, String>;
+fn align_sequences(query: String, target: String) -> Result<AlignmentResultDto, String>;
 ```
 
-### イベント
-
-Tauri のイベントシステムで長時間計算の進捗通知を実装します。
+### メニューイベント
 
 ```rust
 // Backend → Frontend
-app.emit("computation-progress", ProgressPayload { percent: 50 });
-app.emit("file-changed", FileChangedPayload { path });
+app.emit("menu-open-file", ());
+app.emit("menu-save-file", ());
 ```
 
 ```typescript
 // Frontend
 import { listen } from "@tauri-apps/api/event";
 
-listen("computation-progress", (event) => {
-    setProgress(event.payload.percent);
-});
+listen("menu-open-file", () => { /* open file dialog */ });
+```
+
+### Backend Abstraction（Frontend）
+
+```typescript
+interface GenomeBackend {
+  readonly name: "tauri" | "wasm";
+  init(): Promise<void>;
+  parseFile(data: Uint8Array, format: "genbank" | "fasta"): Promise<ParsedSequence>;
+  findCutSites(seq: string, isCircular: boolean, enzymes: string[]): Promise<WasmCutSite[]>;
+  findOrfs(seq: string, isCircular: boolean, minLengthAa: number): Promise<WasmOrf[]>;
+  getEnzymeNames(): Promise<string[]>;
+  openFileDialog(): Promise<{ content: string; fileName: string } | null>;
+}
+
+// Environment detection
+function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 ```
 
 ## Data Flow

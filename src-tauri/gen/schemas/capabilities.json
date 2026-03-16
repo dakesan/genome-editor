@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capability set for Genome Editor","local":true,"windows":["main"],"permissions":["core:default","dialog:default","dialog:allow-open","dialog:allow-save","fs:default","fs:allow-read-text-file","fs:allow-write-text-file","window-state:default","window-state:allow-restore-state","window-state:allow-save-window-state"]}}
