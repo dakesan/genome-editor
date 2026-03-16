@@ -41,7 +41,7 @@
 
 - [x] P0: Cargo workspace 設定（6 crates: core・parser・enzyme・orf・alignment・wasm）
 - [x] P0: CI/CD パイプライン（GitHub Actions: test, lint, WASM build）
-- [ ] P1: criterion ベンチマークフレームワーク導入
+- [x] P1: criterion ベンチマークフレームワーク導入
 - [x] P1: テストデータ収集（pUC19.gb, lambda.gb）
 
 ### crates/core（共通型定義）
@@ -63,7 +63,7 @@
 - [ ] P1: FASTA ライター
 - [ ] P2: SnapGene (.dna) フォーマット対応
 - [x] P1: パーサーユニットテスト（35 テストパス）
-- [ ] P2: パースベンチマーク（JS 版との比較）
+- [x] P2: パースベンチマーク（JS 版との比較）
 
 ### crates/enzyme（制限酵素エンジン）
 
@@ -76,7 +76,7 @@
 - [x] P1: 選択酵素によるフィルタリング
 - [ ] P1: 単一切断サイト酵素の抽出（クローニング用）
 - [x] P1: ユニットテスト（pUC19 EcoRI 検証、31 テストパス）
-- [ ] P2: ベンチマーク（全酵素 × Lambda phage 48.5kb）
+- [x] P2: ベンチマーク（全酵素 × Lambda phage 48.5kb）
 
 ### crates/orf（ORF 検出）
 
@@ -87,7 +87,7 @@
 - [x] P1: 環状配列での ORF 検出（境界をまたぐ ORF）
 - [x] P1: カスタム開始/終止コドンのサポート
 - [x] P1: ユニットテスト（13 テストパス）
-- [ ] P2: ベンチマーク
+- [x] P2: ベンチマーク
 
 ### crates/alignment（配列アライメント）
 
@@ -106,7 +106,7 @@
 - [x] P0: parse_genbank_wasm 関数
 - [x] P0: find_cut_sites_wasm 関数
 - [x] P0: find_orfs_wasm 関数
-- [ ] P1: align_sequences_wasm 関数
+- [x] P1: align_sequences_wasm 関数
 - [ ] P1: wasm-bindgen-test による自動テスト
 - [x] P1: WASM バンドルサイズ 404KB（< 2MB 基準達成）
 

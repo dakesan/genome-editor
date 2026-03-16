@@ -10,3 +10,9 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+genome-editor-parser = { path = "../parser" }
+
+[[bench]]
+name = "orf_bench"
+harness = false
