@@ -1,5 +1,6 @@
-/* Theme variables */
-:root {
+/* Theme variables — dark is default */
+:root,
+[data-theme="dark"] {
   --color-bg: #1a1a2e;
   --color-header: #16213e;
   --color-surface: #0f3460;
@@ -18,6 +19,35 @@
   --font-size-sm: 0.8rem;
   --font-size-base: 0.9rem;
   --border-radius: 4px;
+  /* SeqViz override colors */
+  --seqviz-text-fill: #ddd;
+  --seqviz-index-color: #999;
+  --seqviz-line-stroke: #666;
+}
+
+[data-theme="light"] {
+  --color-bg: #f5f5f5;
+  --color-header: #ffffff;
+  --color-surface: #e8edf2;
+  --color-primary: #d63851;
+  --color-text: #222;
+  --color-text-muted: #666;
+  --color-border: #ccc;
+  --color-button-bg: #e0e4ea;
+  --color-button-hover: #d0d5dd;
+  --color-button-active: #d63851;
+  --header-height: 56px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-size-sm: 0.8rem;
+  --font-size-base: 0.9rem;
+  --border-radius: 4px;
+  /* SeqViz keeps its native dark text on light bg */
+  --seqviz-text-fill: rgb(42, 42, 42);
+  --seqviz-index-color: rgb(115, 119, 125);
+  --seqviz-line-stroke: rgb(115, 119, 125);
 }
 
 /* Full viewport layout */
@@ -237,4 +267,90 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── SeqViz inline-style overrides ──
+ * SeqViz applies inline styles (e.g. fill: "rgb(42,42,42)") directly on
+ * SVG elements. CSS !important is the only way to override inline styles.
+ * Individual tspan elements carry fill="<color>" SVG attributes for
+ * per-base coloring; those are NOT overridden (they remain colorful).
+ */
+
+/* DNA sequence text — the <text> element itself has the class */
+text.la-vz-seq,
+text.la-vz-comp-seq {
+  fill: var(--seqviz-text-fill) !important;
+}
+
+/* Index tick labels (bp numbers) */
+text.la-vz-index-tick-label {
+  fill: var(--seqviz-index-color) !important;
+}
+
+/* Annotation labels — SVG text uses fill; foreignObject div uses color */
+.la-vz-annotation-label {
+  fill: var(--seqviz-text-fill) !important;
+  color: var(--seqviz-text-fill) !important;
+}
+
+/* Circular view labels (plasmid name, bp count, feature labels) */
+text.la-vz-circular-label {
+  fill: var(--seqviz-text-fill) !important;
+}
+
+/* Index lines and ticks */
+.la-vz-index-line,
+.la-vz-index-tick {
+  stroke: var(--seqviz-line-stroke) !important;
+}
+
+/* Cut site lines */
+.la-vz-cut-site {
+  stroke: var(--seqviz-line-stroke) !important;
+}
+
+/* Cut site text labels (enzyme names on linear view) */
+text.la-vz-cut-site-text {
+  fill: var(--seqviz-text-fill) !important;
+}
+
+/* Selection edge */
+.la-vz-selection-edge {
+  fill: var(--seqviz-index-color) !important;
+  stroke: var(--seqviz-index-color) !important;
+}
+
+/* Label connector lines */
+.la-vz-label-line {
+  stroke: var(--seqviz-line-stroke) !important;
+}
+
+/* ORF / translation labels */
+text.la-vz-handle-label,
+text.la-vz-translation-amino-acid-label {
+  fill: var(--seqviz-text-fill) !important;
+}
+
+/* Primer labels */
+.la-vz-primer-label {
+  fill: var(--seqviz-text-fill) !important;
+  color: var(--seqviz-text-fill) !important;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  margin-left: auto;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--color-button-hover);
 }

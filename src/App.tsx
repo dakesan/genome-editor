@@ -9,6 +9,7 @@ import { useEnzymes } from "./hooks/useEnzymes";
 import { useGenBankParser } from "./hooks/useGenBankParser";
 import { useOrfs } from "./hooks/useOrfs";
 import { usePerformance } from "./hooks/usePerformance";
+import { useTheme } from "./hooks/useTheme";
 import type { ViewerType } from "./types/sequence";
 import { reportWebVitals } from "./utils/performance";
 
@@ -17,6 +18,7 @@ function isTauri(): boolean {
 }
 
 function App() {
+  const { theme, toggleTheme } = useTheme();
   const { parsedSequence, isLoading, error, parseFile, backend } = useGenBankParser();
   const [viewerType, setViewerType] = useState<ViewerType>("both");
   const [enzymes, setEnzymes] = useState<string[]>(["EcoRI"]);
@@ -131,6 +133,14 @@ function App() {
             Render: {renderMetrics.duration.toFixed(0)}ms ({backend})
           </span>
         )}
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+        >
+          {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
+        </button>
       </header>
 
       {error && <div className="app-error">Error: {error}</div>}
