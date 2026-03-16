@@ -72,3 +72,34 @@ Before marking any task complete:
 
 Format: `<type>(<scope>): <description>`
 Types: feat, fix, chore, test, docs, perf
+
+## Phase 1: Rust/WASM Engine
+
+### Rust Commands
+
+- cargo test -p genome-editor-{crate} -- run crate tests
+- cargo clippy -p genome-editor-{crate} -- -D warnings -- lint crate
+- cargo fmt --check -- format check
+- wasm-pack build crates/wasm --target web --out-dir ../../pkg -- WASM build
+
+### Phase 1 File Ownership
+
+| Agent | Owned Files |
+|-------|-------------|
+| rust-core | `Cargo.toml`, `crates/core/**`, `.github/workflows/rust.yml` |
+| rust-parser | `crates/parser/**` |
+| rust-enzyme | `crates/enzyme/**` |
+| rust-orf | `crates/orf/**` |
+| rust-alignment | `crates/alignment/**` |
+| rust-wasm | `crates/wasm/**`, `pkg/**` |
+| frontend-wasm | `src/wasm/**`, `src/hooks/useWasm*.ts`, `src/hooks/useEnzymes.ts`, `src/hooks/useOrfs.ts`, `src/types/wasm.ts` |
+| frontend-ui | `src/components/CutSiteList.tsx`, `src/components/LoadingOverlay.tsx` |
+| leader | `*.md`, `src/App.tsx`, `vite.config.ts`, `package.json` |
+
+### Rust Quality Gates
+
+```bash
+cargo test -p {crate}
+cargo clippy -p {crate} -- -D warnings
+cargo fmt --check
+```

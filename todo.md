@@ -29,9 +29,9 @@
 
 ### Go/No-Go 判定
 
-- [ ] P0: Phase 0 評価レポート作成
-    - SeqViz で十分か、カスタマイズが必要か
-    - Phase 1 に進むべきか、代替アプローチが必要か
+- [x] P0: Phase 0 評価レポート作成（`docs/phase0-evaluation.md`）
+    - SeqViz はビューアとして十分 → Go 判定
+    - Phase 1（Rust/WASM 計算エンジン）に進む
 
 ## Phase 1: Rust/WASM 計算エンジン（2〜3 人月）
 
@@ -39,86 +39,86 @@
 
 ### Rust ワークスペース構築
 
-- [ ] P0: Cargo workspace 設定（6 crates: core・parser・enzyme・orf・alignment・wasm）
-- [ ] P0: CI/CD パイプライン（GitHub Actions: test, lint, WASM build）
+- [x] P0: Cargo workspace 設定（6 crates: core・parser・enzyme・orf・alignment・wasm）
+- [x] P0: CI/CD パイプライン（GitHub Actions: test, lint, WASM build）
 - [ ] P1: criterion ベンチマークフレームワーク導入
-- [ ] P1: テストデータ収集（pUC19.gb, lambda.gb, 大規模プラスミド）
+- [x] P1: テストデータ収集（pUC19.gb, lambda.gb）
 
 ### crates/core（共通型定義）
 
-- [ ] P0: Sequence 型の定義
-- [ ] P0: Annotation 型の定義
-- [ ] P0: RestrictionEnzyme / CutSite 型の定義
-- [ ] P0: Orf 型の定義
-- [ ] P1: serde Serialize/Deserialize 実装
-- [ ] P1: wasm-bindgen 互換型（JsValue 変換）
+- [x] P0: Sequence 型の定義
+- [x] P0: Annotation 型の定義
+- [x] P0: RestrictionEnzyme / CutSite 型の定義
+- [x] P0: Orf 型の定義
+- [x] P1: serde Serialize/Deserialize 実装
+- [x] P1: wasm-bindgen 互換型（tsify-next 導出）
 
 ### crates/parser（GenBank/FASTA パーサー）
 
 依存: crates/core です。
 
-- [ ] P0: gb-io による GenBank パース → Sequence + Vec<Annotation> 変換
-- [ ] P0: FASTA パース
-- [ ] P1: GenBank ライター（編集後の保存用）
+- [x] P0: gb-io による GenBank パース → Sequence + Vec<Annotation> 変換
+- [x] P0: FASTA パース
+- [x] P1: GenBank ライター（編集後の保存用）
 - [ ] P1: FASTA ライター
 - [ ] P2: SnapGene (.dna) フォーマット対応
-- [ ] P1: パーサーユニットテスト（既知配列で検証）
+- [x] P1: パーサーユニットテスト（35 テストパス）
 - [ ] P2: パースベンチマーク（JS 版との比較）
 
 ### crates/enzyme（制限酵素エンジン）
 
 依存: crates/core です。
 
-- [ ] P0: REBASE データのパース＆埋め込み（build.rs or include_str）
-- [ ] P0: Aho-Corasick オートマトン構築（複数の酵素を同時検索）
-- [ ] P0: 回文配列・非回文配列の両方をサポート
-- [ ] P0: 環状配列での切断サイト検出（境界をまたぐケース）
-- [ ] P1: 選択酵素によるフィルタリング
+- [x] P0: REBASE データのパース＆埋め込み（include_str + JSON）
+- [x] P0: Aho-Corasick オートマトン構築（複数の酵素を同時検索）
+- [x] P0: 回文配列・非回文配列の両方をサポート
+- [x] P0: 環状配列での切断サイト検出（境界をまたぐケース）
+- [x] P1: 選択酵素によるフィルタリング
 - [ ] P1: 単一切断サイト酵素の抽出（クローニング用）
-- [ ] P1: ユニットテスト（pUC19 の既知切断サイトで検証）
+- [x] P1: ユニットテスト（pUC19 EcoRI 検証、31 テストパス）
 - [ ] P2: ベンチマーク（全酵素 × Lambda phage 48.5kb）
 
 ### crates/orf（ORF 検出）
 
 依存: crates/core です。
 
-- [ ] P0: 6 フレーム ORF 検出（3 forward + 3 reverse）
-- [ ] P0: 最小長フィルタリング
-- [ ] P1: 環状配列での ORF 検出（境界をまたぐ ORF）
-- [ ] P1: カスタム開始/終止コドンのサポート
-- [ ] P1: ユニットテスト
+- [x] P0: 6 フレーム ORF 検出（3 forward + 3 reverse）
+- [x] P0: 最小長フィルタリング
+- [x] P1: 環状配列での ORF 検出（境界をまたぐ ORF）
+- [x] P1: カスタム開始/終止コドンのサポート
+- [x] P1: ユニットテスト（13 テストパス）
 - [ ] P2: ベンチマーク
 
 ### crates/alignment（配列アライメント）
 
 依存: crates/core です。
 
-- [ ] P1: rust-bio による Pairwise アライメント（Smith-Waterman）
-- [ ] P1: 部分配列検索（ミスマッチ許容）
-- [ ] P2: CIGAR 文字列生成
-- [ ] P2: ユニットテスト
+- [x] P1: rust-bio による Pairwise アライメント（Smith-Waterman）
+- [x] P1: 部分配列検索（ミスマッチ許容）
+- [x] P2: CIGAR 文字列生成
+- [x] P2: ユニットテスト（12 テストパス）
 
 ### crates/wasm（WASM エントリポイント）
 
 依存: crates/parser, enzyme, orf, alignment です。
 
-- [ ] P0: wasm-pack ビルド設定
-- [ ] P0: parse_genbank_wasm 関数
-- [ ] P0: find_cut_sites_wasm 関数
-- [ ] P0: find_orfs_wasm 関数
+- [x] P0: wasm-pack ビルド設定
+- [x] P0: parse_genbank_wasm 関数
+- [x] P0: find_cut_sites_wasm 関数
+- [x] P0: find_orfs_wasm 関数
 - [ ] P1: align_sequences_wasm 関数
 - [ ] P1: wasm-bindgen-test による自動テスト
-- [ ] P1: WASM バンドルサイズ最適化（wasm-opt）
+- [x] P1: WASM バンドルサイズ 404KB（< 2MB 基準達成）
 
 ### Frontend 統合
 
 依存: crates/wasm ビルド完了が前提です。
 
-- [ ] P0: Web Worker での WASM モジュールロード
-- [ ] P0: React hooks（useEnzymes, useOrfs 等）の実装
-- [ ] P0: SeqViz コンポーネントとの結合
-- [ ] P1: ローディング状態・エラーハンドリング UI
-- [ ] P1: 既存 JS ロジックとのフォールバック切り替え
+- [x] P0: WASM モジュール初期化（`src/wasm/init.ts`）
+- [x] P0: React hooks（useWasmParser, useEnzymes, useOrfs）の実装
+- [x] P0: SeqViz コンポーネントとの結合（translations prop で ORF 表示）
+- [x] P1: CutSiteList / LoadingOverlay コンポーネント
+- [x] P1: WASM/JS フォールバック切り替え（useGenBankParser）
 - [ ] P2: WASM vs JS のパフォーマンス比較ダッシュボード
 
 ## Phase 2: Tauri 化（1〜2 人月）

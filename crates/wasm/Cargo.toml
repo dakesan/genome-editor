@@ -1,0 +1,22 @@
+[package]
+name = "genome-editor-wasm"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+genome-editor-core = { path = "../core" }
+genome-editor-parser = { path = "../parser" }
+genome-editor-enzyme = { path = "../enzyme" }
+genome-editor-orf = { path = "../orf" }
+genome-editor-alignment = { path = "../alignment", default-features = false }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde-wasm-bindgen = "0.6"
+tsify-next = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

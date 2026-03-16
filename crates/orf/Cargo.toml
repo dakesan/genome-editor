@@ -1,0 +1,12 @@
+[package]
+name = "genome-editor-orf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+genome-editor-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1"

@@ -1,0 +1,58 @@
+name: Rust CI
+
+on:
+  push:
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/rust.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings
+      - name: Test
+        run: cargo test --workspace
+      - name: Build
+        run: cargo build --workspace --release
+
+  wasm:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build WASM
+        run: wasm-pack build crates/wasm --target web --out-dir ../../pkg
+      - name: Check WASM size
+        run: |
+          SIZE=$(stat -c%s pkg/*.wasm 2>/dev/null || stat -f%z pkg/*.wasm)
+          echo "WASM size: $SIZE bytes"
+          if [ "$SIZE" -gt 2097152 ]; then
+            echo "WASM too large (> 2MB)"
+            exit 1
+          fi

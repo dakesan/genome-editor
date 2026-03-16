@@ -1,0 +1,14 @@
+[package]
+name = "genome-editor-parser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+genome-editor-core = { path = "../core" }
+gb-io = "0.8"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1"
