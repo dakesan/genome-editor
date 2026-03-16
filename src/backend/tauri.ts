@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import type { ParsedSequence } from "../types/sequence";
-import type { WasmCutSite, WasmOrf } from "../types/wasm";
+import type { WasmAlignmentResult, WasmCutSite, WasmOrf } from "../types/wasm";
 import type { GenomeBackend } from "./types";
 
 export class TauriBackend implements GenomeBackend {
@@ -33,6 +33,13 @@ export class TauriBackend implements GenomeBackend {
     });
   }
 
+  async findSingleCutters(seq: string, isCircular: boolean): Promise<WasmCutSite[]> {
+    return invoke<WasmCutSite[]>("find_single_cutters", {
+      seq,
+      isCircular,
+    });
+  }
+
   async findOrfs(seq: string, isCircular: boolean, minLengthAa: number): Promise<WasmOrf[]> {
     return invoke<WasmOrf[]>("detect_orfs", {
       seq,
@@ -43,6 +50,20 @@ export class TauriBackend implements GenomeBackend {
 
   async getEnzymeNames(): Promise<string[]> {
     return invoke<string[]>("get_enzyme_names");
+  }
+
+  async alignSequences(
+    query: string,
+    target: string,
+    _matchScore = 2,
+    _mismatchPenalty = -1,
+    _gapOpenPenalty = -5,
+    _gapExtendPenalty = -1,
+  ): Promise<WasmAlignmentResult> {
+    return invoke<WasmAlignmentResult>("align_sequences", {
+      query,
+      target,
+    });
   }
 
   async openFileDialog(): Promise<{

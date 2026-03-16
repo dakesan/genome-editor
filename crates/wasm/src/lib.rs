@@ -5,10 +5,12 @@
 use genome_editor_core::Sequence;
 use wasm_bindgen::prelude::*;
 
+mod alignment_api;
 mod enzyme_api;
 mod orf_api;
 mod parser_api;
 
+pub use alignment_api::*;
 pub use enzyme_api::*;
 pub use orf_api::*;
 pub use parser_api::*;

@@ -18,6 +18,7 @@ pub fn run() {
             commands::file::open_file,
             commands::file::save_file,
             commands::enzyme::compute_cut_sites,
+            commands::enzyme::find_single_cutters,
             commands::enzyme::get_enzyme_names,
             commands::orf::detect_orfs,
             commands::alignment::align_sequences,

@@ -1427,6 +1427,7 @@ dependencies = [
  "genome-editor-enzyme",
  "genome-editor-orf",
  "genome-editor-parser",
+ "js-sys",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",

@@ -32,6 +32,13 @@ export interface WasmOrf {
   length_aa: number;
 }
 
+export interface WasmAlignmentResult {
+  score: number;
+  aligned_query: string;
+  aligned_target: string;
+  cigar: string;
+}
+
 export interface WasmError {
   error: string;
 }

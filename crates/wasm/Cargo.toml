@@ -20,3 +20,4 @@ tsify-next = { workspace = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+js-sys = "0.3"

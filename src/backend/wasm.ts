@@ -1,7 +1,7 @@
 // WASM backend implementation — used in browser environments.
 
 import type { ParsedSequence } from "../types/sequence";
-import type { WasmCutSite, WasmOrf, WasmParsedSequence } from "../types/wasm";
+import type { WasmAlignmentResult, WasmCutSite, WasmOrf, WasmParsedSequence } from "../types/wasm";
 import { isWasmError } from "../types/wasm";
 import { ensureWasmInit } from "../wasm/init";
 import type { GenomeBackend } from "./types";
@@ -53,6 +53,12 @@ export class WasmBackend implements GenomeBackend {
     return result as WasmCutSite[];
   }
 
+  async findSingleCutters(seq: string, isCircular: boolean): Promise<WasmCutSite[]> {
+    await this.init();
+    const wasm = await import("../../pkg/genome_editor_wasm.js");
+    return wasm.find_single_cutters_wasm(seq, isCircular) as WasmCutSite[];
+  }
+
   async findOrfs(seq: string, isCircular: boolean, minLengthAa: number): Promise<WasmOrf[]> {
     await this.init();
     const wasm = await import("../../pkg/genome_editor_wasm.js");
@@ -63,6 +69,26 @@ export class WasmBackend implements GenomeBackend {
     await this.init();
     const wasm = await import("../../pkg/genome_editor_wasm.js");
     return wasm.get_enzyme_names() as string[];
+  }
+
+  async alignSequences(
+    query: string,
+    target: string,
+    matchScore = 2,
+    mismatchPenalty = -1,
+    gapOpenPenalty = -5,
+    gapExtendPenalty = -1,
+  ): Promise<WasmAlignmentResult> {
+    await this.init();
+    const wasm = await import("../../pkg/genome_editor_wasm.js");
+    return wasm.pairwise_align_wasm(
+      query,
+      target,
+      matchScore,
+      mismatchPenalty,
+      gapOpenPenalty,
+      gapExtendPenalty,
+    ) as WasmAlignmentResult;
   }
 
   async openFileDialog(): Promise<{

@@ -60,9 +60,9 @@
 - [x] P0: gb-io による GenBank パース → Sequence + Vec<Annotation> 変換
 - [x] P0: FASTA パース
 - [x] P1: GenBank ライター（編集後の保存用）
-- [ ] P1: FASTA ライター
+- [x] P1: FASTA ライター
 - [ ] P2: SnapGene (.dna) フォーマット対応
-- [x] P1: パーサーユニットテスト（35 テストパス）
+- [x] P1: パーサーユニットテスト（42 テストパス）
 - [x] P2: パースベンチマーク（JS 版との比較）
 
 ### crates/enzyme（制限酵素エンジン）
@@ -74,8 +74,8 @@
 - [x] P0: 回文配列・非回文配列の両方をサポート
 - [x] P0: 環状配列での切断サイト検出（境界をまたぐケース）
 - [x] P1: 選択酵素によるフィルタリング
-- [ ] P1: 単一切断サイト酵素の抽出（クローニング用）
-- [x] P1: ユニットテスト（pUC19 EcoRI 検証、31 テストパス）
+- [x] P1: 単一切断サイト酵素の抽出（クローニング用）
+- [x] P1: ユニットテスト（pUC19 EcoRI 検証、34 テストパス）
 - [x] P2: ベンチマーク（全酵素 × Lambda phage 48.5kb）
 
 ### crates/orf（ORF 検出）
@@ -107,7 +107,7 @@
 - [x] P0: find_cut_sites_wasm 関数
 - [x] P0: find_orfs_wasm 関数
 - [x] P1: align_sequences_wasm 関数
-- [ ] P1: wasm-bindgen-test による自動テスト
+- [x] P1: wasm-bindgen-test による自動テスト（10 テスト、CI 統合済み）
 - [x] P1: WASM バンドルサイズ 404KB（< 2MB 基準達成）
 
 ### Frontend 統合

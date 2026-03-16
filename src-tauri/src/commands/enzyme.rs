@@ -34,6 +34,26 @@ pub fn compute_cut_sites(
 }
 
 #[tauri::command]
+pub fn find_single_cutters(
+    seq: String,
+    is_circular: bool,
+    state: State<AppState>,
+) -> Vec<CutSiteDto> {
+    let sequence = Sequence::new("query", seq.as_bytes(), is_circular);
+    let cut_sites = state.enzyme_db.find_single_cutters(&sequence);
+
+    cut_sites
+        .into_iter()
+        .map(|cs| CutSiteDto {
+            enzyme_name: cs.enzyme_name,
+            position: cs.position,
+            forward_cut: cs.forward_cut,
+            reverse_cut: cs.reverse_cut,
+        })
+        .collect()
+}
+
+#[tauri::command]
 pub fn get_enzyme_names(state: State<AppState>) -> Vec<String> {
     state
         .enzyme_db

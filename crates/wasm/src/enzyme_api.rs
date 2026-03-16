@@ -51,3 +51,18 @@ pub fn find_cut_sites_wasm(seq_bases: &str, is_circular: bool, enzyme_names_json
     let result: Vec<WasmCutSite> = cut_sites.iter().map(WasmCutSite::from).collect();
     serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
 }
+
+/// Find restriction enzymes that cut the sequence exactly once.
+///
+/// # Arguments
+/// * `seq_bases` - The DNA sequence as a string
+/// * `is_circular` - Whether the sequence is circular
+#[wasm_bindgen]
+pub fn find_single_cutters_wasm(seq_bases: &str, is_circular: bool) -> JsValue {
+    let sequence = build_sequence("query", seq_bases, is_circular);
+    let db = genome_editor_enzyme::EnzymeDatabase::from_rebase();
+    let cut_sites = db.find_single_cutters(&sequence);
+
+    let result: Vec<WasmCutSite> = cut_sites.iter().map(WasmCutSite::from).collect();
+    serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
+}

@@ -58,3 +58,5 @@ jobs:
             echo "WASM too large (> 2MB)"
             exit 1
           fi
+      - name: Run wasm-bindgen-test
+        run: wasm-pack test --headless --chrome crates/wasm

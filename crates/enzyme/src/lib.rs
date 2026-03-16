@@ -53,6 +53,28 @@ impl EnzymeDatabase {
     pub fn get_enzyme(&self, name: &str) -> Option<&RestrictionEnzyme> {
         self.enzymes.iter().find(|e| e.name == name)
     }
+
+    /// Find restriction enzymes that cut the sequence exactly once ("single cutters").
+    ///
+    /// These are especially useful for cloning, as a single-cutter enzyme
+    /// linearizes a circular plasmid at exactly one site.
+    pub fn find_single_cutters(&self, sequence: &Sequence) -> Vec<CutSite> {
+        let all_names: Vec<String> = self.enzyme_names().iter().map(|s| s.to_string()).collect();
+        let all_sites = self.find_cut_sites(sequence, &all_names);
+
+        // Group sites by enzyme name and keep only those with exactly one hit.
+        let mut counts: std::collections::HashMap<&str, Vec<&CutSite>> =
+            std::collections::HashMap::new();
+        for site in &all_sites {
+            counts.entry(&site.enzyme_name).or_default().push(site);
+        }
+
+        counts
+            .into_values()
+            .filter(|sites| sites.len() == 1)
+            .map(|sites| sites[0].clone())
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -129,5 +151,51 @@ mod tests {
         let seq = Sequence::new("test", b"GAATTC", false);
         let sites = db.find_cut_sites(&seq, &["FakeEnzyme".to_string()]);
         assert!(sites.is_empty());
+    }
+
+    #[test]
+    fn test_find_single_cutters_puc19() {
+        let db = EnzymeDatabase::from_rebase();
+        // pUC19 test data
+        let puc19_data = include_bytes!("../../testdata/pUC19.gb");
+        let (seq, _) = genome_editor_parser::parse_genbank(puc19_data).unwrap();
+        let singles = db.find_single_cutters(&seq);
+        // EcoRI should be a single-cutter in pUC19
+        let ecori_sites: Vec<_> = singles
+            .iter()
+            .filter(|s| s.enzyme_name == "EcoRI")
+            .collect();
+        assert_eq!(
+            ecori_sites.len(),
+            1,
+            "EcoRI should be a single-cutter in pUC19"
+        );
+    }
+
+    #[test]
+    fn test_find_single_cutters_excludes_multi_cutters() {
+        let db = EnzymeDatabase::from_rebase();
+        let puc19_data = include_bytes!("../../testdata/pUC19.gb");
+        let (seq, _) = genome_editor_parser::parse_genbank(puc19_data).unwrap();
+        let singles = db.find_single_cutters(&seq);
+        // All results should be unique enzyme names (each appearing exactly once)
+        let mut names: Vec<&str> = singles.iter().map(|s| s.enzyme_name.as_str()).collect();
+        names.sort();
+        let unique_count = names.len();
+        names.dedup();
+        assert_eq!(
+            names.len(),
+            unique_count,
+            "each enzyme should appear exactly once in single cutters"
+        );
+    }
+
+    #[test]
+    fn test_find_single_cutters_no_cut_sequence() {
+        let db = EnzymeDatabase::from_rebase();
+        // Very short sequence unlikely to have any recognition sites
+        let seq = Sequence::new("tiny", b"AAAA", false);
+        let singles = db.find_single_cutters(&seq);
+        assert!(singles.is_empty());
     }
 }

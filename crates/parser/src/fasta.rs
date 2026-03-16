@@ -88,6 +88,45 @@ pub fn parse_fasta(data: &[u8]) -> GenomeResult<Vec<Sequence>> {
     Ok(sequences)
 }
 
+/// Write sequences to FASTA format.
+///
+/// Each sequence is written as a header line (`>{name}`) followed by
+/// the base sequence wrapped at 80 characters per line.
+/// If a sequence's name is empty, "Untitled" is used.
+pub fn write_fasta(sequences: &[Sequence]) -> GenomeResult<Vec<u8>> {
+    if sequences.is_empty() {
+        return Err(GenomeError::InvalidSequence(
+            "no sequences to write".to_string(),
+        ));
+    }
+
+    let mut out = Vec::new();
+
+    for (i, seq) in sequences.iter().enumerate() {
+        if i > 0 {
+            out.push(b'\n');
+        }
+
+        // Header line
+        let name = if seq.name.is_empty() {
+            "Untitled"
+        } else {
+            &seq.name
+        };
+        out.push(b'>');
+        out.extend_from_slice(name.as_bytes());
+        out.push(b'\n');
+
+        // Sequence lines (80 chars per line)
+        for chunk in seq.bases.chunks(80) {
+            out.extend_from_slice(chunk);
+            out.push(b'\n');
+        }
+    }
+
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,5 +263,80 @@ mod tests {
         let seqs = parse_fasta(data).unwrap();
         assert_eq!(seqs.len(), 1);
         assert_eq!(seqs[0].bases, b"ATGCGCTA");
+    }
+
+    // -- write_fasta tests -----------------------------------------------
+
+    #[test]
+    fn test_write_fasta_simple() {
+        let seq = Sequence::new("seq1", b"ATGCATGC", false);
+        let output = write_fasta(&[seq]).unwrap();
+        let output_str = std::str::from_utf8(&output).unwrap();
+        assert!(output_str.starts_with(">seq1\n"));
+        assert!(output_str.contains("ATGCATGC"));
+    }
+
+    #[test]
+    fn test_write_fasta_line_wrapping() {
+        // Create a sequence longer than 80 chars
+        let bases = vec![b'A'; 200];
+        let seq = Sequence::new("long", &bases, false);
+        let output = write_fasta(&[seq]).unwrap();
+        let output_str = std::str::from_utf8(&output).unwrap();
+        let lines: Vec<&str> = output_str.lines().collect();
+        assert_eq!(lines[0], ">long");
+        assert_eq!(lines[1].len(), 80); // first data line
+        assert_eq!(lines[2].len(), 80); // second data line
+        assert_eq!(lines[3].len(), 40); // remaining 40 chars
+    }
+
+    #[test]
+    fn test_write_fasta_multiple_sequences() {
+        let seq1 = Sequence::new("s1", b"ATGC", false);
+        let seq2 = Sequence::new("s2", b"GCTA", false);
+        let output = write_fasta(&[seq1, seq2]).unwrap();
+        let output_str = std::str::from_utf8(&output).unwrap();
+        assert!(output_str.contains(">s1\n"));
+        assert!(output_str.contains(">s2\n"));
+        assert!(output_str.contains("ATGC"));
+        assert!(output_str.contains("GCTA"));
+    }
+
+    #[test]
+    fn test_write_fasta_empty_name() {
+        let seq = Sequence::new("", b"ATGC", false);
+        let output = write_fasta(&[seq]).unwrap();
+        let output_str = std::str::from_utf8(&output).unwrap();
+        assert!(output_str.starts_with(">Untitled\n"));
+    }
+
+    #[test]
+    fn test_write_fasta_empty_sequences() {
+        let result = write_fasta(&[]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_write_fasta_roundtrip() {
+        let seq1 = Sequence::new("seq1", b"ATGCGATCGATCG", false);
+        let seq2 = Sequence::new("seq2", b"TTTTAAAA", false);
+        let written = write_fasta(&[seq1.clone(), seq2.clone()]).unwrap();
+        let parsed = parse_fasta(&written).unwrap();
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].name, "seq1");
+        assert_eq!(parsed[0].bases, seq1.bases);
+        assert_eq!(parsed[1].name, "seq2");
+        assert_eq!(parsed[1].bases, seq2.bases);
+    }
+
+    #[test]
+    fn test_write_fasta_roundtrip_long_sequence() {
+        // Test with a sequence that spans multiple lines
+        let bases: Vec<u8> = (0..500).map(|i| b"ATGC"[i % 4]).collect();
+        let seq = Sequence::new("long_seq", &bases, false);
+        let written = write_fasta(&[seq.clone()]).unwrap();
+        let parsed = parse_fasta(&written).unwrap();
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].bases, seq.bases);
     }
 }
