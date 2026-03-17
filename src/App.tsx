@@ -96,7 +96,7 @@ function App() {
     async (content: string, name: string) => {
       setFileName(name);
       startMeasure();
-      await parseFile(content);
+      await parseFile(content, name);
     },
     [parseFile, startMeasure, setFileName],
   );

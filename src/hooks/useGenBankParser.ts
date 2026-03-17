@@ -10,14 +10,19 @@ interface UseGenBankParserReturn {
   parsedSequence: ParsedSequence | null;
   isLoading: boolean;
   error: string | null;
-  parseFile: (fileContent: string) => Promise<void>;
+  parseFile: (fileContent: string, fileName?: string) => Promise<void>;
   reset: () => void;
   backend: ParserBackend;
 }
 
-function detectFormat(content: string): "genbank" | "fasta" {
+function detectFormat(content: string, fileName?: string): "genbank" | "fasta" {
   const trimmed = content.trimStart();
   if (trimmed.startsWith("LOCUS") || trimmed.startsWith("locus")) {
+    return "genbank";
+  }
+  // Extension-based fallback
+  const ext = fileName?.split(".").pop()?.toLowerCase();
+  if (ext === "ape" || ext === "gb" || ext === "gbk" || ext === "genbank") {
     return "genbank";
   }
   return "fasta";
@@ -45,7 +50,7 @@ export function useGenBankParser(): UseGenBankParserReturn {
   const error = useGenomeStore((s) => s.error);
   const backend = useGenomeStore((s) => s.backend);
 
-  const parseFile = useCallback(async (fileContent: string) => {
+  const parseFile = useCallback(async (fileContent: string, fileName?: string) => {
     const store = useGenomeStore.getState();
     store.setIsLoading(true);
     store.setError(null);
@@ -53,7 +58,7 @@ export function useGenBankParser(): UseGenBankParserReturn {
       // Try backend (Tauri IPC or WASM) first.
       const b = await getBackend();
       await b.init();
-      const format = detectFormat(fileContent);
+      const format = detectFormat(fileContent, fileName);
       const data = new TextEncoder().encode(fileContent);
       const result = await b.parseFile(data, format);
       useGenomeStore.getState().setParsedSequence(result);

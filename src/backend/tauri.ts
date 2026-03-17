@@ -74,7 +74,7 @@ export class TauriBackend implements GenomeBackend {
       filters: [
         {
           name: "Sequence Files",
-          extensions: ["gb", "gbk", "genbank", "fasta", "fa", "fna", "seq"],
+          extensions: ["gb", "gbk", "genbank", "fasta", "fa", "fna", "seq", "ape"],
         },
       ],
       multiple: false,
