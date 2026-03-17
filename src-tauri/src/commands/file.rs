@@ -1,5 +1,5 @@
 use genome_editor_core::{FeatureType, Strand};
-use genome_editor_parser::{parse_fasta, parse_genbank, write_genbank};
+use genome_editor_parser::{parse_fasta, parse_genbank, write_fasta, write_genbank};
 use serde::{Deserialize, Serialize};
 
 /// DTO matching the frontend WasmAnnotation type.
@@ -106,25 +106,31 @@ pub async fn open_file(path: String) -> Result<SequenceFileDto, String> {
 }
 
 #[tauri::command]
-pub async fn save_file(path: String, data: SequenceFileDto) -> Result<(), String> {
+pub async fn save_file(path: String, data: SequenceFileDto, format: String) -> Result<(), String> {
     let sequence =
         genome_editor_core::Sequence::new(&data.name, data.seq.as_bytes(), data.is_circular);
-    let annotations: Vec<genome_editor_core::Annotation> = data
-        .annotations
-        .iter()
-        .map(|a| genome_editor_core::Annotation {
-            name: a.name.clone(),
-            start: a.start,
-            end: a.end,
-            strand: direction_to_strand(a.direction),
-            feature_type: string_to_feature_type(&a.feature_type),
-            color: a.color.clone(),
-            qualifiers: std::collections::HashMap::new(),
-        })
-        .collect();
 
-    let genbank_bytes = write_genbank(&sequence, &annotations).map_err(|e| e.to_string())?;
-    tokio::fs::write(&path, &genbank_bytes)
+    let bytes = match format.as_str() {
+        "fasta" => write_fasta(&[sequence]).map_err(|e| e.to_string())?,
+        _ => {
+            let annotations: Vec<genome_editor_core::Annotation> = data
+                .annotations
+                .iter()
+                .map(|a| genome_editor_core::Annotation {
+                    name: a.name.clone(),
+                    start: a.start,
+                    end: a.end,
+                    strand: direction_to_strand(a.direction),
+                    feature_type: string_to_feature_type(&a.feature_type),
+                    color: a.color.clone(),
+                    qualifiers: std::collections::HashMap::new(),
+                })
+                .collect();
+            write_genbank(&sequence, &annotations).map_err(|e| e.to_string())?
+        }
+    };
+
+    tokio::fs::write(&path, &bytes)
         .await
         .map_err(|e| e.to_string())?;
     Ok(())

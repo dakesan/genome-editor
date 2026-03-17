@@ -4,7 +4,7 @@ import type { ParsedSequence } from "../types/sequence";
 import type { WasmAlignmentResult, WasmCutSite, WasmOrf, WasmParsedSequence } from "../types/wasm";
 import { isWasmError } from "../types/wasm";
 import { ensureWasmInit } from "../wasm/init";
-import type { GenomeBackend } from "./types";
+import type { GenomeBackend, SaveData } from "./types";
 
 function toAppSequence(wasm: WasmParsedSequence): ParsedSequence {
   return {
@@ -120,5 +120,45 @@ export class WasmBackend implements GenomeBackend {
       };
       input.click();
     });
+  }
+
+  async exportToBytes(data: SaveData, format: "genbank" | "fasta"): Promise<Uint8Array> {
+    await this.init();
+    const wasm = await import("../../pkg/genome_editor_wasm.js");
+    if (format === "fasta") {
+      return wasm.write_fasta_wasm(data.name, data.seq);
+    }
+    const annotationsJson = JSON.stringify(
+      data.annotations.map((a) => ({
+        name: a.name,
+        start: a.start,
+        end: a.end,
+        direction: a.direction ?? 0,
+        color: a.color ?? null,
+        type: a.type ?? "misc_feature",
+      })),
+    );
+    return wasm.write_genbank_wasm(data.name, data.seq, data.isCircular, annotationsJson);
+  }
+
+  async saveFileDialog(
+    data: SaveData,
+    format: "genbank" | "fasta",
+    defaultName: string,
+  ): Promise<boolean> {
+    const bytes = await this.exportToBytes(data, format);
+    const ext = format === "fasta" ? ".fasta" : ".gb";
+    const mimeType = "application/octet-stream";
+    const blob = new Blob([bytes.slice()], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = defaultName.replace(/\.[^.]+$/, ext);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return true;
   }
 }

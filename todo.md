@@ -219,19 +219,26 @@
 - [x] P1: Cmd+F ショートカット（サイドバー自動オープン）
 - [x] P1: SearchPanel テスト（7 テスト）
 
-### W4: アノテーション管理パネル（未着手）
+### W4: アノテーション管理パネル
 
-- [ ] P1: アノテーション一覧パネル
-- [ ] P1: アノテーションフィルタ
-- [ ] P2: アノテーション新規追加 UI
+- [x] P1: アノテーション一覧パネル（AnnotationListPanel: 一覧表示、クリック選択）
+- [x] P1: アノテーションフィルタ（テキスト検索 + タイプフィルタ）
+- [x] P2: アノテーション新規追加 UI（インラインフォーム、selection 自動入力）
+- [x] P2: アノテーション削除 UI
+- [x] P1: AnnotationListPanel テスト（8 テスト）
 
-### W5: 配列編集（未着手）
+### W5: 配列編集
 
-- [ ] P1: 配列挿入・削除・置換
-- [ ] P1: Undo/Redo
-- [ ] P2: Rust 側 mutation 処理
+- [x] P1: 配列挿入・削除・置換（sequenceEdit.ts 純粋関数、28 テスト）
+- [x] P1: Undo/Redo（スナップショット方式、50 エントリ上限）
+- [x] P1: EditPanel コンポーネント（Insert/Delete/Replace UI、9 テスト）
+- [x] P1: キーボードショートカット（Cmd+Z/Cmd+Shift+Z/Delete/Backspace）
+- [x] P1: アノテーション自動調整（insert/delete/replace 時の位置シフト）
+- [-] P2: Rust 側 mutation 処理（YAGNI: < 50kb なので JS で十分高速）
 
-### W6: ファイル保存（未着手）
+### W6: ファイル保存
 
-- [ ] P1: GenBank/FASTA エクスポート
-- [ ] P2: Save As ダイアログ統合
+- [x] P1: GenBank/FASTA エクスポート（WASM write バインディング + Tauri save_file format 対応）
+- [x] P2: Save As ダイアログ統合（Cmd+S、フォーマット選択、FASTA アノテーション消失警告）
+- [x] P1: WasmBackend saveFileDialog（Blob ダウンロード）
+- [x] P1: TauriBackend saveFileDialog（ネイティブダイアログ）

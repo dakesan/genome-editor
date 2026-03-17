@@ -4,6 +4,8 @@
   "identifier": "com.genome-editor.desktop",
   "version": "0.1.0",
   "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },

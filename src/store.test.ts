@@ -20,6 +20,9 @@ describe("useGenomeStore", () => {
     expect(state.orfs).toEqual([]);
     expect(state.sidebarOpen).toBe(false);
     expect(state.selection).toBeNull();
+    expect(state.editHistory).toEqual([]);
+    expect(state.editHistoryIndex).toBe(-1);
+    expect(state.isDirty).toBe(false);
   });
 
   it("setParsedSequence updates state", () => {
@@ -140,5 +143,208 @@ describe("useGenomeStore", () => {
     expect(state.sidebarOpen).toBe(false);
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
+    expect(state.editHistory).toEqual([]);
+    expect(state.editHistoryIndex).toBe(-1);
+    expect(state.isDirty).toBe(false);
+  });
+
+  describe("sequence editing", () => {
+    const setupSequence = () => {
+      useGenomeStore.getState().setParsedSequence({
+        name: "test",
+        seq: "ATGCATGC",
+        annotations: [{ name: "gene1", start: 2, end: 6 }],
+      });
+    };
+
+    it("applySequenceEdit inserts bases and updates annotations", () => {
+      setupSequence();
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 4,
+        insertedBases: "NNN",
+      });
+
+      const state = useGenomeStore.getState();
+      expect(state.parsedSequence?.seq).toBe("ATGCNNNATGC");
+      expect(state.parsedSequence?.annotations[0].start).toBe(2);
+      expect(state.parsedSequence?.annotations[0].end).toBe(9); // 6 + 3
+      expect(state.isDirty).toBe(true);
+      expect(state.editHistory).toHaveLength(1);
+    });
+
+    it("applySequenceEdit deletes bases", () => {
+      setupSequence();
+      useGenomeStore.getState().applySequenceEdit({
+        type: "delete",
+        position: 0,
+        deletedCount: 2,
+      });
+
+      const state = useGenomeStore.getState();
+      expect(state.parsedSequence?.seq).toBe("GCATGC");
+      expect(state.parsedSequence?.annotations[0].start).toBe(0);
+      expect(state.parsedSequence?.annotations[0].end).toBe(4);
+    });
+
+    it("applySequenceEdit replaces bases", () => {
+      setupSequence();
+      useGenomeStore.getState().applySequenceEdit({
+        type: "replace",
+        position: 0,
+        deletedCount: 4,
+        insertedBases: "CCCC",
+      });
+
+      const state = useGenomeStore.getState();
+      expect(state.parsedSequence?.seq).toBe("CCCCATGC");
+    });
+
+    it("applySequenceEdit clears selection", () => {
+      setupSequence();
+      useGenomeStore.getState().setSelection({ type: "SEQ", start: 0, end: 4 });
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "A",
+      });
+      expect(useGenomeStore.getState().selection).toBeNull();
+    });
+
+    it("does nothing when no parsedSequence is loaded", () => {
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "A",
+      });
+      expect(useGenomeStore.getState().parsedSequence).toBeNull();
+      expect(useGenomeStore.getState().isDirty).toBe(false);
+    });
+
+    it("undo restores previous state", () => {
+      setupSequence();
+      const originalSeq = useGenomeStore.getState().parsedSequence?.seq;
+
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "NNN",
+      });
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe("NNNATGCATGC");
+
+      useGenomeStore.getState().undo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(originalSeq);
+    });
+
+    it("redo restores undone state", () => {
+      setupSequence();
+
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "NNN",
+      });
+      const editedSeq = useGenomeStore.getState().parsedSequence?.seq;
+
+      useGenomeStore.getState().undo();
+      useGenomeStore.getState().redo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(editedSeq);
+    });
+
+    it("undo does nothing when no history", () => {
+      setupSequence();
+      const originalSeq = useGenomeStore.getState().parsedSequence?.seq;
+      useGenomeStore.getState().undo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(originalSeq);
+    });
+
+    it("redo does nothing when no redo available", () => {
+      setupSequence();
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "A",
+      });
+      const currentSeq = useGenomeStore.getState().parsedSequence?.seq;
+      useGenomeStore.getState().redo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(currentSeq);
+    });
+
+    it("new edit after undo discards redo stack", () => {
+      setupSequence();
+
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "AAA",
+      });
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "BBB",
+      });
+
+      useGenomeStore.getState().undo();
+      useGenomeStore.getState().undo();
+
+      // Now make a new edit — redo should be impossible
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "CCC",
+      });
+
+      useGenomeStore.getState().redo();
+      // Should still have CCC at start (redo did nothing)
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe("CCCATGCATGC");
+    });
+
+    it("markClean sets isDirty to false", () => {
+      setupSequence();
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "A",
+      });
+      expect(useGenomeStore.getState().isDirty).toBe(true);
+      useGenomeStore.getState().markClean();
+      expect(useGenomeStore.getState().isDirty).toBe(false);
+    });
+
+    it("multiple undo/redo cycles work correctly", () => {
+      setupSequence();
+
+      // Edit 1
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "A",
+      });
+      const seq1 = useGenomeStore.getState().parsedSequence?.seq;
+
+      // Edit 2
+      useGenomeStore.getState().applySequenceEdit({
+        type: "insert",
+        position: 0,
+        insertedBases: "B",
+      });
+      const seq2 = useGenomeStore.getState().parsedSequence?.seq;
+
+      // Undo back to edit 1
+      useGenomeStore.getState().undo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(seq1);
+
+      // Redo to edit 2
+      useGenomeStore.getState().redo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(seq2);
+
+      // Undo back to edit 1
+      useGenomeStore.getState().undo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe(seq1);
+
+      // Undo back to original
+      useGenomeStore.getState().undo();
+      expect(useGenomeStore.getState().parsedSequence?.seq).toBe("ATGCATGC");
+    });
   });
 });

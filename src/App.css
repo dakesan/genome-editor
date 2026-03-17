@@ -518,6 +518,426 @@ text.la-vz-translation-amino-acid-label {
   color: var(--seqviz-text-fill) !important;
 }
 
+/* Selection toolbar — inline bar between viewer and cut-site list */
+.selection-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-header);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.selection-toolbar-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  padding: 0 var(--spacing-xs);
+  border-right: 1px solid var(--color-border);
+  margin-right: var(--spacing-xs);
+}
+
+.selection-toolbar-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.selection-toolbar-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition:
+    background 0.1s,
+    border-color 0.1s;
+}
+
+.selection-toolbar-btn:hover:not(:disabled) {
+  background: var(--color-button-hover);
+}
+
+.selection-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.selection-toolbar-btn-danger:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.selection-toolbar-form {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.selection-toolbar-input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  width: 120px;
+}
+
+.selection-toolbar-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.selection-toolbar-select {
+  padding: var(--spacing-xs) var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+/* Annotation list panel */
+.annotation-list-panel {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.annotation-list-panel h3 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.annotation-filters {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.annotation-search-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  min-width: 0;
+}
+
+.annotation-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.annotation-type-filter {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.annotation-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-sm);
+}
+
+.annotation-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.annotation-item {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.annotation-item:hover {
+  background: var(--color-surface);
+}
+
+.annotation-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.annotation-name {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.annotation-delete-btn {
+  padding: 0 var(--spacing-xs);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.annotation-item:hover .annotation-delete-btn {
+  opacity: 1;
+}
+
+.annotation-delete-btn:hover {
+  color: var(--color-primary);
+}
+
+.annotation-item-details {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.annotation-type-badge {
+  background: var(--color-surface);
+  padding: 0 var(--spacing-xs);
+  border-radius: 2px;
+  font-size: 0.7rem;
+}
+
+.annotation-add-btn {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.annotation-add-btn:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.annotation-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.annotation-add-form input,
+.annotation-add-form select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.annotation-add-form input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.annotation-position-row {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.annotation-position-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.annotation-form-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.annotation-form-actions button {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: background 0.15s;
+}
+
+.annotation-form-actions button:hover {
+  background: var(--color-button-hover);
+}
+
+/* Save dialog overlay */
+.save-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.save-dialog {
+  background: var(--color-header);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  min-width: 280px;
+}
+
+.save-dialog h3 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-base);
+}
+
+.save-format-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.save-format-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.save-dialog-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.save-dialog-actions button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: background 0.15s;
+}
+
+.save-dialog-actions button:hover {
+  background: var(--color-button-hover);
+}
+
+/* Edit panel */
+.edit-panel {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.edit-panel h3 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.edit-dirty-indicator {
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+.edit-section {
+  margin-bottom: var(--spacing-sm);
+}
+
+.edit-section-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.edit-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  box-sizing: border-box;
+  margin-bottom: var(--spacing-xs);
+}
+
+.edit-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.edit-validation-error {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.edit-button-row {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.edit-panel button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: background 0.15s;
+}
+
+.edit-panel button:hover:not(:disabled) {
+  background: var(--color-button-hover);
+}
+
+.edit-panel button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.edit-delete-btn {
+  width: 100%;
+}
+
+.edit-undo-redo {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--color-border);
+}
+
+.edit-undo-redo button {
+  flex: 1;
+}
+
 /* Sidebar toggle button */
 .sidebar-toggle {
   margin-left: auto;

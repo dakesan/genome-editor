@@ -1,6 +1,6 @@
-//! WASM bindings for GenBank/FASTA parsing.
+//! WASM bindings for GenBank/FASTA parsing and writing.
 
-use genome_editor_core::{Annotation, Sequence};
+use genome_editor_core::{Annotation, FeatureType, Sequence, Strand};
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
@@ -68,6 +68,38 @@ impl From<&Annotation> for WasmAnnotation {
     }
 }
 
+fn direction_to_strand(direction: i32) -> Strand {
+    match direction {
+        1 => Strand::Forward,
+        -1 => Strand::Reverse,
+        _ => Strand::Both,
+    }
+}
+
+fn string_to_feature_type(s: &str) -> FeatureType {
+    match s {
+        "CDS" => FeatureType::Cds,
+        "gene" => FeatureType::Gene,
+        "promoter" => FeatureType::Promoter,
+        "terminator" => FeatureType::Terminator,
+        "rep_origin" => FeatureType::RepOrigin,
+        "misc_feature" => FeatureType::Misc,
+        other => FeatureType::Other(other.to_string()),
+    }
+}
+
+fn wasm_annotation_to_core(wa: &WasmAnnotation) -> Annotation {
+    Annotation {
+        name: wa.name.clone(),
+        start: wa.start,
+        end: wa.end,
+        strand: direction_to_strand(wa.direction),
+        feature_type: string_to_feature_type(&wa.feature_type),
+        color: wa.color.clone(),
+        qualifiers: std::collections::HashMap::new(),
+    }
+}
+
 /// Parse a GenBank format file from bytes and return JSON result.
 #[wasm_bindgen]
 pub fn parse_genbank_wasm(data: &[u8]) -> JsValue {
@@ -108,4 +140,32 @@ pub fn parse_fasta_wasm(data: &[u8]) -> JsValue {
             serde_wasm_bindgen::to_value(&error).unwrap_or(JsValue::NULL)
         }
     }
+}
+
+/// Write a GenBank format file from sequence data.
+/// Returns the file content as bytes.
+#[wasm_bindgen]
+pub fn write_genbank_wasm(
+    name: &str,
+    seq: &str,
+    is_circular: bool,
+    annotations_json: &str,
+) -> Vec<u8> {
+    let sequence = Sequence::new(name, seq.as_bytes(), is_circular);
+    let wasm_annotations: Vec<WasmAnnotation> =
+        serde_json::from_str(annotations_json).unwrap_or_default();
+    let annotations: Vec<Annotation> = wasm_annotations
+        .iter()
+        .map(wasm_annotation_to_core)
+        .collect();
+
+    genome_editor_parser::write_genbank(&sequence, &annotations).unwrap_or_default()
+}
+
+/// Write a FASTA format file from sequence data.
+/// Returns the file content as bytes.
+#[wasm_bindgen]
+pub fn write_fasta_wasm(name: &str, seq: &str) -> Vec<u8> {
+    let sequence = Sequence::new(name, seq.as_bytes(), false);
+    genome_editor_parser::write_fasta(&[sequence]).unwrap_or_default()
 }

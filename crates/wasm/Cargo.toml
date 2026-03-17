@@ -21,3 +21,6 @@ tsify-next = { workspace = true }
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 js-sys = "0.3"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

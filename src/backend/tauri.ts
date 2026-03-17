@@ -5,7 +5,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import type { ParsedSequence } from "../types/sequence";
 import type { WasmAlignmentResult, WasmCutSite, WasmOrf } from "../types/wasm";
-import type { GenomeBackend } from "./types";
+import type { GenomeBackend, SaveData } from "./types";
 
 export class TauriBackend implements GenomeBackend {
   readonly name = "tauri" as const;
@@ -88,5 +88,49 @@ export class TauriBackend implements GenomeBackend {
     const content = await readTextFile(filePath);
     const fileName = filePath.split("/").pop() ?? "file";
     return { content, fileName };
+  }
+
+  async exportToBytes(data: SaveData, format: "genbank" | "fasta"): Promise<Uint8Array> {
+    // Delegate to WasmBackend for byte generation
+    const { WasmBackend } = await import("./wasm");
+    const wasmBackend = new WasmBackend();
+    return wasmBackend.exportToBytes(data, format);
+  }
+
+  async saveFileDialog(
+    data: SaveData,
+    format: "genbank" | "fasta",
+    defaultName: string,
+  ): Promise<boolean> {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const ext = format === "fasta" ? "fasta" : "gb";
+    const filterName = format === "fasta" ? "FASTA Files" : "GenBank Files";
+
+    const path = await save({
+      filters: [{ name: filterName, extensions: [ext] }],
+      defaultPath: defaultName.replace(/\.[^.]+$/, `.${ext}`),
+    });
+
+    if (!path) return false;
+    const filePath = typeof path === "string" ? path : null;
+    if (!filePath) return false;
+
+    const saveData = {
+      name: data.name,
+      seq: data.seq,
+      is_circular: data.isCircular,
+      length: data.seq.length,
+      annotations: data.annotations.map((a) => ({
+        name: a.name,
+        start: a.start,
+        end: a.end,
+        direction: a.direction ?? 0,
+        color: a.color ?? null,
+        feature_type: a.type ?? "misc_feature",
+      })),
+    };
+
+    await invoke("save_file", { path: filePath, data: saveData, format });
+    return true;
   }
 }

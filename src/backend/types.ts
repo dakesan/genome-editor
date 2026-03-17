@@ -1,7 +1,14 @@
 // Backend abstraction interface for dual-mode (Tauri / WASM) operation.
 
-import type { ParsedSequence } from "../types/sequence";
+import type { ParsedSequence, SequenceAnnotation } from "../types/sequence";
 import type { WasmAlignmentResult, WasmCutSite, WasmOrf } from "../types/wasm";
+
+export interface SaveData {
+  name: string;
+  seq: string;
+  annotations: SequenceAnnotation[];
+  isCircular: boolean;
+}
 
 export interface GenomeBackend {
   readonly name: "tauri" | "wasm";
@@ -20,4 +27,10 @@ export interface GenomeBackend {
     gapExtendPenalty?: number,
   ): Promise<WasmAlignmentResult>;
   openFileDialog(): Promise<{ content: string; fileName: string } | null>;
+  exportToBytes(data: SaveData, format: "genbank" | "fasta"): Promise<Uint8Array>;
+  saveFileDialog(
+    data: SaveData,
+    format: "genbank" | "fasta",
+    defaultName: string,
+  ): Promise<boolean>;
 }

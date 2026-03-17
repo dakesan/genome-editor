@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { getBackend } from "./backend";
+import { AnnotationListPanel } from "./components/AnnotationListPanel";
+import { ContextMenu } from "./components/ContextMenu";
 import { CutSiteList } from "./components/CutSiteList";
+import { EditPanel } from "./components/EditPanel";
 import { FileLoader } from "./components/FileLoader";
 import { SearchPanel } from "./components/SearchPanel";
 import { SelectionInfoPanel } from "./components/SelectionInfoPanel";
@@ -39,7 +42,11 @@ function App() {
   const setFileName = useGenomeStore((s) => s.setFileName);
   const setSelection = useGenomeStore((s) => s.setSelection);
   const setSearchResults = useGenomeStore((s) => s.setSearchResults);
+  const markClean = useGenomeStore((s) => s.markClean);
   const toggleSidebar = useGenomeStore((s) => s.toggleSidebar);
+
+  const [saveFormat, setSaveFormat] = useState<"genbank" | "fasta">("genbank");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const { renderMetrics, startMeasure, stopMeasure } = usePerformance("SeqViewer");
 
@@ -110,20 +117,62 @@ function App() {
     }
   }, [handleFileLoad]);
 
+  // Save file to disk or download.
+  const handleSave = useCallback(
+    async (format: "genbank" | "fasta") => {
+      const seq = useGenomeStore.getState().parsedSequence;
+      if (!seq) return;
+
+      if (format === "fasta" && seq.annotations.length > 0) {
+        const proceed = window.confirm(
+          "FASTA format does not support annotations. Annotations will be lost. Continue?",
+        );
+        if (!proceed) return;
+      }
+
+      const b = await getBackend();
+      const saved = await b.saveFileDialog(
+        {
+          name: seq.name,
+          seq: seq.seq,
+          annotations: seq.annotations,
+          isCircular: false,
+        },
+        format,
+        useGenomeStore.getState().fileName ?? "sequence",
+      );
+      if (saved) {
+        markClean();
+      }
+    },
+    [markClean],
+  );
+
+  // Handle Cmd+S: show save format picker or save directly.
+  const handleSaveShortcut = useCallback(() => {
+    if (!useGenomeStore.getState().parsedSequence) return;
+    setShowSaveDialog(true);
+  }, []);
+
   // Listen for Tauri menu events.
   useEffect(() => {
     if (!isTauri()) return;
-    let unlisten: (() => void) | undefined;
+    let unlistenOpen: (() => void) | undefined;
+    let unlistenSave: (() => void) | undefined;
     (async () => {
       const { listen } = await import("@tauri-apps/api/event");
-      unlisten = await listen("menu-open-file", () => {
+      unlistenOpen = await listen("menu-open-file", () => {
         handleMenuOpen();
+      });
+      unlistenSave = await listen("menu-save-file", () => {
+        handleSaveShortcut();
       });
     })();
     return () => {
-      unlisten?.();
+      unlistenOpen?.();
+      unlistenSave?.();
     };
-  }, [handleMenuOpen]);
+  }, [handleMenuOpen, handleSaveShortcut]);
 
   // Drag-and-drop file loading.
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -159,17 +208,71 @@ function App() {
     }
   }, [parsedSequence, isLoading, stopMeasure]);
 
-  // Cmd+F / Ctrl+F opens sidebar and focuses search.
+  // Keyboard shortcuts: Cmd+F (search), Cmd+Z (undo), Cmd+Shift+Z (redo),
+  // Delete/Backspace (delete selection).
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (mod && e.key === "s") {
+        e.preventDefault();
+        handleSaveShortcut();
+        return;
+      }
+
+      if (mod && e.key === "f") {
         e.preventDefault();
         useGenomeStore.getState().setSidebarOpen(true);
+        return;
+      }
+
+      if (mod && e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        useGenomeStore.getState().redo();
+        return;
+      }
+
+      if (mod && e.key === "z") {
+        e.preventDefault();
+        useGenomeStore.getState().undo();
+        return;
+      }
+
+      if (e.key === "Escape") {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        useGenomeStore.getState().clearSelection();
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        // Only handle if not typing in an input/textarea
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+        const state = useGenomeStore.getState();
+        if (
+          state.parsedSequence &&
+          state.selection?.start != null &&
+          state.selection?.end != null
+        ) {
+          const start = Math.min(state.selection.start, state.selection.end);
+          const end = Math.max(state.selection.start, state.selection.end);
+          const count = end - start;
+          if (count > 0) {
+            e.preventDefault();
+            state.applySequenceEdit({
+              type: "delete",
+              position: start,
+              deletedCount: count,
+            });
+          }
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [handleSaveShortcut]);
 
   // Report web vitals on mount.
   useEffect(() => {
@@ -214,6 +317,60 @@ function App() {
 
       {error && <div className="app-error">Error: {error}</div>}
 
+      {showSaveDialog && (
+        <div
+          className="save-dialog-overlay"
+          role="dialog"
+          onClick={() => setShowSaveDialog(false)}
+          onKeyDown={(e) => e.key === "Escape" && setShowSaveDialog(false)}
+        >
+          <div
+            className="save-dialog"
+            role="document"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={() => {}}
+          >
+            <h3>Save As</h3>
+            <div className="save-format-group">
+              <label>
+                <input
+                  type="radio"
+                  name="format"
+                  value="genbank"
+                  checked={saveFormat === "genbank"}
+                  onChange={() => setSaveFormat("genbank")}
+                />
+                GenBank (.gb)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="format"
+                  value="fasta"
+                  checked={saveFormat === "fasta"}
+                  onChange={() => setSaveFormat("fasta")}
+                />
+                FASTA (.fasta)
+              </label>
+            </div>
+            <div className="save-dialog-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSaveDialog(false);
+                  handleSave(saveFormat);
+                }}
+              >
+                Save
+              </button>
+              <button type="button" onClick={() => setShowSaveDialog(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="app-body">
         <div className="main-content">
           {parsedSequence ? (
@@ -229,6 +386,7 @@ function App() {
                 onSearch={handleSearch}
                 highlights={searchHighlights}
               />
+              <ContextMenu />
               <CutSiteList cutSites={cutSites} isLoading={cutSitesLoading} />
             </>
           ) : (
@@ -240,6 +398,8 @@ function App() {
         <Sidebar open={sidebarOpen}>
           <SearchPanel />
           <SelectionInfoPanel selection={selection} sequence={parsedSequence} />
+          <EditPanel />
+          <AnnotationListPanel />
         </Sidebar>
       </div>
     </div>
