@@ -22,7 +22,7 @@ function detectFormat(content: string, fileName?: string): "genbank" | "fasta" {
   }
   // Extension-based fallback
   const ext = fileName?.split(".").pop()?.toLowerCase();
-  if (ext === "ape" || ext === "gb" || ext === "gbk" || ext === "genbank") {
+  if (ext === "ape" || ext === "dna" || ext === "gb" || ext === "gbk" || ext === "genbank") {
     return "genbank";
   }
   return "fasta";

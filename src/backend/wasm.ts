@@ -99,7 +99,7 @@ export class WasmBackend implements GenomeBackend {
     return new Promise((resolve) => {
       const input = document.createElement("input");
       input.type = "file";
-      input.accept = ".gb,.gbk,.genbank,.fasta,.fa,.fna,.seq,.ape";
+      input.accept = ".gb,.gbk,.genbank,.fasta,.fa,.fna,.seq,.ape,.dna";
       input.onchange = () => {
         const file = input.files?.[0];
         if (!file) {

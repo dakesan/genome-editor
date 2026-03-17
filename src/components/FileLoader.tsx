@@ -33,7 +33,7 @@ export function FileLoader({ onFileLoad, isLoading }: FileLoaderProps) {
       <input
         ref={inputRef}
         type="file"
-        accept=".gb,.gbk,.genbank,.fasta,.fa,.fna,.seq,.ape"
+        accept=".gb,.gbk,.genbank,.fasta,.fa,.fna,.seq,.ape,.dna"
         onChange={handleFileChange}
         style={{ display: "none" }}
       />
