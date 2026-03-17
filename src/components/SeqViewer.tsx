@@ -1,4 +1,5 @@
 import { SeqViz } from "seqviz";
+import type { SearchRange, SeqSelection } from "../types/selection";
 import type { ParsedSequence, ViewerType } from "../types/sequence";
 
 export interface Translation {
@@ -8,14 +9,35 @@ export interface Translation {
   name: string;
 }
 
+interface HighlightProp {
+  start: number;
+  end: number;
+  color?: string;
+}
+
 interface SeqViewerProps {
   sequence: ParsedSequence;
   viewerType: ViewerType;
   enzymes: string[];
   translations?: Translation[];
+  onSelection?: (selection: SeqSelection) => void;
+  copyEvent?: (event: React.KeyboardEvent<HTMLElement>) => boolean;
+  search?: { query: string; mismatch?: number };
+  onSearch?: (ranges: SearchRange[]) => void;
+  highlights?: HighlightProp[];
 }
 
-export function SeqViewer({ sequence, viewerType, enzymes, translations = [] }: SeqViewerProps) {
+export function SeqViewer({
+  sequence,
+  viewerType,
+  enzymes,
+  translations = [],
+  onSelection,
+  copyEvent,
+  search,
+  onSearch,
+  highlights,
+}: SeqViewerProps) {
   return (
     <div className="seq-viewer" style={{ flex: 1 }}>
       <SeqViz
@@ -26,6 +48,11 @@ export function SeqViewer({ sequence, viewerType, enzymes, translations = [] }: 
         enzymes={enzymes}
         translations={translations}
         primers={[]}
+        onSelection={onSelection}
+        copyEvent={copyEvent}
+        search={search}
+        onSearch={onSearch}
+        highlights={highlights}
       />
     </div>
   );

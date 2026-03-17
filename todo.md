@@ -185,12 +185,53 @@
 
 ### 状態管理の最適化
 
-- [ ] P2: Redux → Zustand/Jotai 移行
+- [x] P2: Zustand 導入（useState → 集中ストア移行、56 テストパス）
 - [ ] P2: セレクター最適化（不要な再計算の排除）
-- [ ] P3: Immutable.js の除去（構造的共有を自前実装）
+- [-] P3: Immutable.js の除去（使用していないためスキップ）
 
 ### バンドル最適化
 
 - [ ] P2: コード分割（lazy import）
 - [ ] P2: Tree shaking の徹底
-- [ ] P3: BlueprintJS → 軽量 UI ライブラリへの移行
+- [-] P3: BlueprintJS → 軽量 UI ライブラリへの移行（使用していないためスキップ）
+
+## Phase 3+4: エディタ機能（進行中）
+
+### W1: Zustand + サイドバーレイアウト
+
+- [x] P1: Zustand ストア導入（全アプリ状態の集中管理）
+- [x] P1: hooks リファクタリング（useGenBankParser, useEnzymes, useOrfs）
+- [x] P1: サイドバーレイアウト（320px collapsible panel）
+- [x] P1: ストアユニットテスト（8 テスト）
+
+### W2: 配列選択 & 情報パネル
+
+- [x] P1: SeqViz onSelection コールバック接続
+- [x] P1: SelectionInfoPanel コンポーネント（位置/長さ/配列表示）
+- [x] P1: Cmd+C コピーイベント対応
+- [x] P1: SelectionInfoPanel テスト（7 テスト）
+
+### W3: 配列検索
+
+- [x] P1: SearchPanel コンポーネント（debounce 入力、ミスマッチ許容）
+- [x] P1: SeqViz search + onSearch + highlights 接続
+- [x] P1: 検索結果ナビゲーション（Prev/Next、循環）
+- [x] P1: Cmd+F ショートカット（サイドバー自動オープン）
+- [x] P1: SearchPanel テスト（7 テスト）
+
+### W4: アノテーション管理パネル（未着手）
+
+- [ ] P1: アノテーション一覧パネル
+- [ ] P1: アノテーションフィルタ
+- [ ] P2: アノテーション新規追加 UI
+
+### W5: 配列編集（未着手）
+
+- [ ] P1: 配列挿入・削除・置換
+- [ ] P1: Undo/Redo
+- [ ] P2: Rust 側 mutation 処理
+
+### W6: ファイル保存（未着手）
+
+- [ ] P1: GenBank/FASTA エクスポート
+- [ ] P2: Save As ダイアログ統合

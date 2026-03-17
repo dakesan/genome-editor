@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import seqparse from "seqparse";
 import { getBackend } from "../backend";
+import { useGenomeStore } from "../store";
 import type { ParsedSequence } from "../types/sequence";
 
 type ParserBackend = "tauri" | "wasm" | "js";
@@ -39,14 +40,15 @@ async function parseWithJs(fileContent: string): Promise<ParsedSequence> {
 }
 
 export function useGenBankParser(): UseGenBankParserReturn {
-  const [parsedSequence, setParsedSequence] = useState<ParsedSequence | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [backend, setBackend] = useState<ParserBackend>("js");
+  const parsedSequence = useGenomeStore((s) => s.parsedSequence);
+  const isLoading = useGenomeStore((s) => s.isLoading);
+  const error = useGenomeStore((s) => s.error);
+  const backend = useGenomeStore((s) => s.backend);
 
   const parseFile = useCallback(async (fileContent: string) => {
-    setIsLoading(true);
-    setError(null);
+    const store = useGenomeStore.getState();
+    store.setIsLoading(true);
+    store.setError(null);
     try {
       // Try backend (Tauri IPC or WASM) first.
       const b = await getBackend();
@@ -54,27 +56,29 @@ export function useGenBankParser(): UseGenBankParserReturn {
       const format = detectFormat(fileContent);
       const data = new TextEncoder().encode(fileContent);
       const result = await b.parseFile(data, format);
-      setParsedSequence(result);
-      setBackend(b.name);
+      useGenomeStore.getState().setParsedSequence(result);
+      useGenomeStore.getState().setBackend(b.name);
     } catch {
       // Fall back to JS parser.
       try {
         const result = await parseWithJs(fileContent);
-        setParsedSequence(result);
-        setBackend("js");
+        useGenomeStore.getState().setParsedSequence(result);
+        useGenomeStore.getState().setBackend("js");
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to parse file");
-        setParsedSequence(null);
+        const msg = e instanceof Error ? e.message : "Failed to parse file";
+        useGenomeStore.getState().setError(msg);
+        useGenomeStore.getState().setParsedSequence(null);
       }
     } finally {
-      setIsLoading(false);
+      useGenomeStore.getState().setIsLoading(false);
     }
   }, []);
 
   const reset = useCallback(() => {
-    setParsedSequence(null);
-    setError(null);
-    setIsLoading(false);
+    const store = useGenomeStore.getState();
+    store.setParsedSequence(null);
+    store.setError(null);
+    store.setIsLoading(false);
   }, []);
 
   return { parsedSequence, isLoading, error, parseFile, reset, backend };

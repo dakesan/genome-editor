@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getBackend } from "../backend";
+import { useGenomeStore } from "../store";
 import type { WasmCutSite } from "../types/wasm";
 
 interface UseEnzymesReturn {
@@ -16,8 +17,8 @@ export function useEnzymes(
   isCircular: boolean,
   selectedEnzymes: string[],
 ): UseEnzymesReturn {
-  const [cutSites, setCutSites] = useState<WasmCutSite[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const cutSites = useGenomeStore((s) => s.cutSites);
+  const isLoading = useGenomeStore((s) => s.cutSitesLoading);
   const [error, setError] = useState<string | null>(null);
   const [availableEnzymes, setAvailableEnzymes] = useState<string[]>([]);
 
@@ -44,22 +45,22 @@ export function useEnzymes(
   // Find cut sites whenever sequence or enzyme selection changes.
   const findCutSites = useCallback(async () => {
     if (!sequence || selectedEnzymes.length === 0) {
-      setCutSites([]);
+      useGenomeStore.getState().setCutSites([]);
       return;
     }
 
-    setIsLoading(true);
+    useGenomeStore.getState().setCutSitesLoading(true);
     setError(null);
     try {
       const backend = await getBackend();
       await backend.init();
       const result = await backend.findCutSites(sequence, isCircular, selectedEnzymes);
-      setCutSites(result);
+      useGenomeStore.getState().setCutSites(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cut site search failed");
-      setCutSites([]);
+      useGenomeStore.getState().setCutSites([]);
     } finally {
-      setIsLoading(false);
+      useGenomeStore.getState().setCutSitesLoading(false);
     }
   }, [sequence, isCircular, selectedEnzymes]);
 

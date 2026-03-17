@@ -19,6 +19,7 @@
   --font-size-sm: 0.8rem;
   --font-size-base: 0.9rem;
   --border-radius: 4px;
+  --sidebar-width: 320px;
   /* SeqViz override colors */
   --seqviz-text-fill: #ddd;
   --seqviz-index-color: #999;
@@ -44,6 +45,7 @@
   --font-size-sm: 0.8rem;
   --font-size-base: 0.9rem;
   --border-radius: 4px;
+  --sidebar-width: 320px;
   /* SeqViz keeps its native dark text on light bg */
   --seqviz-text-fill: rgb(42, 42, 42);
   --seqviz-index-color: rgb(115, 119, 125);
@@ -170,6 +172,185 @@
   background: var(--color-button-active);
   color: #fff;
   border-color: var(--color-button-active);
+}
+
+/* App body — main + sidebar side by side */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  border-left: 1px solid var(--color-border);
+  background: var(--color-header);
+  overflow-y: auto;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed {
+  width: 0;
+  border-left: none;
+  overflow: hidden;
+}
+
+/* Search panel */
+.search-panel {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.search-panel h3 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.search-input-row {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.search-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.search-clear-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.search-clear-btn:hover {
+  background: var(--color-button-hover);
+  color: var(--color-text);
+}
+
+.search-mismatch {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.search-mismatch select {
+  padding: 2px var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.search-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.search-match-count {
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.search-nav button {
+  padding: 2px var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.search-nav button:hover:not(:disabled) {
+  background: var(--color-button-hover);
+}
+
+.search-nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Selection info panel */
+.selection-info-panel {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.selection-info-panel h3 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.selection-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.selection-detail {
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.selection-detail .label {
+  color: var(--color-text-muted);
+}
+
+.selection-detail .value {
+  color: var(--color-text);
+}
+
+.selection-sequence {
+  word-break: break-all;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  font-size: var(--font-size-sm);
+  background: var(--color-surface);
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+  max-height: 80px;
+  overflow-y: auto;
+  margin-top: 2px;
+  color: var(--color-text);
 }
 
 /* Sequence viewer area */
@@ -337,9 +518,26 @@ text.la-vz-translation-amino-acid-label {
   color: var(--seqviz-text-fill) !important;
 }
 
+/* Sidebar toggle button */
+.sidebar-toggle {
+  margin-left: auto;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.sidebar-toggle:hover {
+  background: var(--color-button-hover);
+}
+
 /* Theme toggle button */
 .theme-toggle {
-  margin-left: auto;
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);

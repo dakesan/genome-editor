@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import "./App.css";
 import { getBackend } from "./backend";
 import { CutSiteList } from "./components/CutSiteList";
 import { FileLoader } from "./components/FileLoader";
+import { SearchPanel } from "./components/SearchPanel";
+import { SelectionInfoPanel } from "./components/SelectionInfoPanel";
 import { SeqViewer } from "./components/SeqViewer";
+import { Sidebar } from "./components/Sidebar";
 import { ViewerControls } from "./components/ViewerControls";
 import { useEnzymes } from "./hooks/useEnzymes";
 import { useGenBankParser } from "./hooks/useGenBankParser";
 import { useOrfs } from "./hooks/useOrfs";
 import { usePerformance } from "./hooks/usePerformance";
 import { useTheme } from "./hooks/useTheme";
-import type { ViewerType } from "./types/sequence";
+import { useGenomeStore } from "./store";
+import type { SearchRange, SeqSelection } from "./types/selection";
 import { reportWebVitals } from "./utils/performance";
 
 function isTauri(): boolean {
@@ -20,9 +24,22 @@ function isTauri(): boolean {
 function App() {
   const { theme, toggleTheme } = useTheme();
   const { parsedSequence, isLoading, error, parseFile, backend } = useGenBankParser();
-  const [viewerType, setViewerType] = useState<ViewerType>("both");
-  const [enzymes, setEnzymes] = useState<string[]>(["EcoRI"]);
-  const [fileName, setFileName] = useState<string | null>(null);
+
+  const viewerType = useGenomeStore((s) => s.viewerType);
+  const enzymes = useGenomeStore((s) => s.enzymes);
+  const fileName = useGenomeStore((s) => s.fileName);
+  const selection = useGenomeStore((s) => s.selection);
+  const searchQuery = useGenomeStore((s) => s.searchQuery);
+  const searchMismatch = useGenomeStore((s) => s.searchMismatch);
+  const searchResults = useGenomeStore((s) => s.searchResults);
+  const searchCurrentIndex = useGenomeStore((s) => s.searchCurrentIndex);
+  const sidebarOpen = useGenomeStore((s) => s.sidebarOpen);
+  const setViewerType = useGenomeStore((s) => s.setViewerType);
+  const setEnzymes = useGenomeStore((s) => s.setEnzymes);
+  const setFileName = useGenomeStore((s) => s.setFileName);
+  const setSelection = useGenomeStore((s) => s.setSelection);
+  const setSearchResults = useGenomeStore((s) => s.setSearchResults);
+  const toggleSidebar = useGenomeStore((s) => s.toggleSidebar);
 
   const { renderMetrics, startMeasure, stopMeasure } = usePerformance("SeqViewer");
 
@@ -44,13 +61,44 @@ function App() {
     name: `ORF ${i + 1} (${orf.length_aa} aa)`,
   }));
 
+  // Search props for SeqViz.
+  const searchProp = useMemo(() => {
+    if (!searchQuery) return undefined;
+    return { query: searchQuery, mismatch: searchMismatch || undefined };
+  }, [searchQuery, searchMismatch]);
+
+  const handleSearch = useCallback(
+    (ranges: SearchRange[]) => {
+      setSearchResults(ranges);
+    },
+    [setSearchResults],
+  );
+
+  // Highlight current search match with a distinct color.
+  const searchHighlights = useMemo(() => {
+    if (searchResults.length === 0 || searchCurrentIndex >= searchResults.length) return undefined;
+    const current = searchResults[searchCurrentIndex];
+    return [{ start: current.start, end: current.end, color: "rgba(255, 165, 0, 0.5)" }];
+  }, [searchResults, searchCurrentIndex]);
+
+  const handleSelection = useCallback(
+    (sel: SeqSelection) => {
+      setSelection(sel);
+    },
+    [setSelection],
+  );
+
+  const handleCopyEvent = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    return (event.metaKey || event.ctrlKey) && event.key === "c";
+  }, []);
+
   const handleFileLoad = useCallback(
     async (content: string, name: string) => {
       setFileName(name);
       startMeasure();
       await parseFile(content);
     },
-    [parseFile, startMeasure],
+    [parseFile, startMeasure, setFileName],
   );
 
   // Tauri menu event: open file via native dialog.
@@ -111,6 +159,18 @@ function App() {
     }
   }, [parsedSequence, isLoading, stopMeasure]);
 
+  // Cmd+F / Ctrl+F opens sidebar and focuses search.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        useGenomeStore.getState().setSidebarOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   // Report web vitals on mount.
   useEffect(() => {
     reportWebVitals();
@@ -135,6 +195,15 @@ function App() {
         )}
         <button
           type="button"
+          className="sidebar-toggle"
+          onClick={toggleSidebar}
+          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+          title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+        >
+          {sidebarOpen ? "\u2715" : "\u2630"}
+        </button>
+        <button
+          type="button"
           className="theme-toggle"
           onClick={toggleTheme}
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
@@ -145,21 +214,34 @@ function App() {
 
       {error && <div className="app-error">Error: {error}</div>}
 
-      {parsedSequence ? (
-        <>
-          <SeqViewer
-            sequence={parsedSequence}
-            viewerType={viewerType}
-            enzymes={enzymes}
-            translations={translations}
-          />
-          <CutSiteList cutSites={cutSites} isLoading={cutSitesLoading} />
-        </>
-      ) : (
-        <div className="app-status">
-          {isLoading ? "Parsing sequence..." : "Load a GenBank or FASTA file to get started"}
+      <div className="app-body">
+        <div className="main-content">
+          {parsedSequence ? (
+            <>
+              <SeqViewer
+                sequence={parsedSequence}
+                viewerType={viewerType}
+                enzymes={enzymes}
+                translations={translations}
+                onSelection={handleSelection}
+                copyEvent={handleCopyEvent}
+                search={searchProp}
+                onSearch={handleSearch}
+                highlights={searchHighlights}
+              />
+              <CutSiteList cutSites={cutSites} isLoading={cutSitesLoading} />
+            </>
+          ) : (
+            <div className="app-status">
+              {isLoading ? "Parsing sequence..." : "Load a GenBank or FASTA file to get started"}
+            </div>
+          )}
         </div>
-      )}
+        <Sidebar open={sidebarOpen}>
+          <SearchPanel />
+          <SelectionInfoPanel selection={selection} sequence={parsedSequence} />
+        </Sidebar>
+      </div>
     </div>
   );
 }

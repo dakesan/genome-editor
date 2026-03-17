@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getBackend } from "../backend";
+import { useGenomeStore } from "../store";
 import type { WasmOrf } from "../types/wasm";
 
 interface UseOrfsReturn {
@@ -15,13 +16,13 @@ export function useOrfs(
   isCircular: boolean,
   minLengthAa: number,
 ): UseOrfsReturn {
-  const [orfs, setOrfs] = useState<WasmOrf[]>([]);
+  const orfs = useGenomeStore((s) => s.orfs);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const findOrfs = useCallback(async () => {
     if (!sequence) {
-      setOrfs([]);
+      useGenomeStore.getState().setOrfs([]);
       return;
     }
 
@@ -31,10 +32,10 @@ export function useOrfs(
       const backend = await getBackend();
       await backend.init();
       const result = await backend.findOrfs(sequence, isCircular, minLengthAa);
-      setOrfs(result);
+      useGenomeStore.getState().setOrfs(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "ORF detection failed");
-      setOrfs([]);
+      useGenomeStore.getState().setOrfs([]);
     } finally {
       setIsLoading(false);
     }
