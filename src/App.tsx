@@ -61,12 +61,16 @@ function App() {
   const { orfs } = useOrfs(parsedSequence?.seq ?? null, false, 100);
 
   // Convert ORFs to SeqViz translations prop format.
-  const translations = orfs.map((orf, i) => ({
-    start: orf.start,
-    end: orf.end,
-    direction: orf.strand === "forward" ? (1 as const) : (-1 as const),
-    name: `ORF ${i + 1} (${orf.length_aa} aa)`,
-  }));
+  const translations = useMemo(
+    () =>
+      orfs.map((orf, i) => ({
+        start: orf.start,
+        end: orf.end,
+        direction: orf.strand === "forward" ? (1 as const) : (-1 as const),
+        name: `ORF ${i + 1} (${orf.length_aa} aa)`,
+      })),
+    [orfs],
+  );
 
   // Search props for SeqViz.
   const searchProp = useMemo(() => {
@@ -375,18 +379,20 @@ function App() {
         <div className="main-content">
           {parsedSequence ? (
             <>
-              <SeqViewer
-                sequence={parsedSequence}
-                viewerType={viewerType}
-                enzymes={enzymes}
-                translations={translations}
-                onSelection={handleSelection}
-                copyEvent={handleCopyEvent}
-                search={searchProp}
-                onSearch={handleSearch}
-                highlights={searchHighlights}
-              />
-              <ContextMenu />
+              <div className="viewer-wrapper">
+                <SeqViewer
+                  sequence={parsedSequence}
+                  viewerType={viewerType}
+                  enzymes={enzymes}
+                  translations={translations}
+                  onSelection={handleSelection}
+                  copyEvent={handleCopyEvent}
+                  search={searchProp}
+                  onSearch={handleSearch}
+                  highlights={searchHighlights}
+                />
+                <ContextMenu />
+              </div>
               <CutSiteList cutSites={cutSites} isLoading={cutSitesLoading} />
             </>
           ) : (

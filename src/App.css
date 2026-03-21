@@ -189,6 +189,17 @@
   min-width: 0;
 }
 
+/* Wrapper around SeqViewer + ContextMenu.
+ * ContextMenu is positioned absolutely so it does not shift the viewer layout
+ * during selection, which would break drag-selection coordinate calculations. */
+.viewer-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-width);
@@ -518,8 +529,16 @@ text.la-vz-translation-amino-acid-label {
   color: var(--seqviz-text-fill) !important;
 }
 
-/* Selection toolbar — inline bar between viewer and cut-site list */
+/* Selection toolbar — overlay at the bottom of the viewer.
+ * Uses absolute positioning so it does NOT shift the flex layout
+ * of SeqViewer when selection appears/disappears. This prevents
+ * getBoundingClientRect() drift that breaks drag-selection. */
 .selection-toolbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -527,9 +546,7 @@ text.la-vz-translation-amino-acid-label {
   padding: var(--spacing-xs) var(--spacing-md);
   background: var(--color-header);
   border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .selection-toolbar-info {
