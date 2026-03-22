@@ -6,6 +6,7 @@ import { ContextMenu } from "./components/ContextMenu";
 import { CutSiteList } from "./components/CutSiteList";
 import { EditPanel } from "./components/EditPanel";
 import { FileLoader } from "./components/FileLoader";
+import { MsaPanel } from "./components/MsaPanel";
 import { SearchPanel } from "./components/SearchPanel";
 import { SelectionInfoPanel } from "./components/SelectionInfoPanel";
 import { SeqViewer } from "./components/SeqViewer";
@@ -47,6 +48,7 @@ function App() {
 
   const [saveFormat, setSaveFormat] = useState<"genbank" | "fasta">("genbank");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [msaPanelOpen, setMsaPanelOpen] = useState(false);
 
   const { renderMetrics, startMeasure, stopMeasure } = usePerformance("SeqViewer");
 
@@ -304,6 +306,14 @@ function App() {
         )}
         <button
           type="button"
+          className={`msa-toggle ${msaPanelOpen ? "active" : ""}`}
+          onClick={() => setMsaPanelOpen((v) => !v)}
+          title="Multiple Sequence Alignment"
+        >
+          MSA
+        </button>
+        <button
+          type="button"
           className="sidebar-toggle"
           onClick={toggleSidebar}
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
@@ -379,6 +389,11 @@ function App() {
 
       <div className="app-body">
         <div className="main-content">
+          <MsaPanel
+            open={msaPanelOpen}
+            onToggle={() => setMsaPanelOpen(false)}
+            currentSequence={parsedSequence}
+          />
           {parsedSequence ? (
             <>
               <div className="viewer-wrapper">
