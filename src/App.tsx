@@ -94,6 +94,13 @@ function App() {
     return [{ start: current.start, end: current.end, color: "rgba(255, 165, 0, 0.5)" }];
   }, [searchResults, searchCurrentIndex]);
 
+  // Programmatic selection to scroll SeqViz to the current search match.
+  const searchSelection = useMemo(() => {
+    if (searchResults.length === 0 || searchCurrentIndex >= searchResults.length) return undefined;
+    const current = searchResults[searchCurrentIndex];
+    return { start: current.start, end: current.end };
+  }, [searchResults, searchCurrentIndex]);
+
   const handleSelection = useCallback(
     (sel: SeqSelection) => {
       setSelection(sel);
@@ -407,6 +414,7 @@ function App() {
                   search={searchProp}
                   onSearch={handleSearch}
                   highlights={searchHighlights}
+                  selection={searchSelection}
                 />
                 <ContextMenu />
               </div>

@@ -16,6 +16,12 @@ interface HighlightProp {
   color?: string;
 }
 
+interface ExternalSelection {
+  start: number;
+  end: number;
+  clockwise?: boolean;
+}
+
 interface SeqViewerProps {
   sequence: ParsedSequence;
   viewerType: ViewerType;
@@ -26,6 +32,7 @@ interface SeqViewerProps {
   search?: { query: string; mismatch?: number };
   onSearch?: (ranges: SearchRange[]) => void;
   highlights?: HighlightProp[];
+  selection?: ExternalSelection;
 }
 
 // Stable empty array to avoid creating new references on each render.
@@ -44,6 +51,7 @@ export function SeqViewer({
   search,
   onSearch,
   highlights,
+  selection,
 }: SeqViewerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -163,6 +171,7 @@ export function SeqViewer({
         search={search}
         onSearch={onSearch}
         highlights={highlights}
+        selection={selection}
       />
     </div>
   );
