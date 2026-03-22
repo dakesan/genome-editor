@@ -25,7 +25,5 @@ dist-ssr
 
 # Rust / WASM
 target/
-pkg/
 wasm-pack.log
-*.wasm
 !crates/testdata/**

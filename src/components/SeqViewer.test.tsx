@@ -119,23 +119,7 @@ describe("ViewerControls", () => {
     expect(onViewerTypeChange).toHaveBeenCalledWith("linear");
   });
 
-  it("renders all enzyme buttons", () => {
-    render(
-      <ViewerControls
-        viewerType="both"
-        onViewerTypeChange={() => {}}
-        selectedEnzymes={[]}
-        onEnzymesChange={() => {}}
-      />,
-    );
-
-    const expectedEnzymes = ["EcoRI", "BamHI", "PstI", "HindIII", "XbaI", "SalI", "SphI", "NotI"];
-    for (const enzyme of expectedEnzymes) {
-      expect(screen.getByText(enzyme)).toBeInTheDocument();
-    }
-  });
-
-  it("highlights selected enzyme buttons with active class", () => {
+  it("shows enzyme count when enzymes are selected", () => {
     render(
       <ViewerControls
         viewerType="both"
@@ -145,12 +129,27 @@ describe("ViewerControls", () => {
       />,
     );
 
-    expect(screen.getByText("EcoRI")).toHaveClass("active");
-    expect(screen.getByText("BamHI")).toHaveClass("active");
-    expect(screen.getByText("PstI")).not.toHaveClass("active");
+    expect(screen.getByText("Enzymes (2)")).toBeInTheDocument();
   });
 
-  it("calls onEnzymesChange to add enzyme when unselected enzyme is clicked", () => {
+  it("opens enzyme popup on button click and lists all enzymes", () => {
+    render(
+      <ViewerControls
+        viewerType="both"
+        onViewerTypeChange={() => {}}
+        selectedEnzymes={[]}
+        onEnzymesChange={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Enzymes"));
+    const expectedEnzymes = ["EcoRI", "BamHI", "PstI", "HindIII", "XbaI", "SalI", "SphI", "NotI"];
+    for (const enzyme of expectedEnzymes) {
+      expect(screen.getByText(enzyme)).toBeInTheDocument();
+    }
+  });
+
+  it("calls onEnzymesChange when enzyme checkbox is toggled", () => {
     const onEnzymesChange = vi.fn();
     render(
       <ViewerControls
@@ -161,11 +160,14 @@ describe("ViewerControls", () => {
       />,
     );
 
+    // Open popup
+    fireEvent.click(screen.getByText("Enzymes (1)"));
+    // Toggle BamHI on
     fireEvent.click(screen.getByText("BamHI"));
     expect(onEnzymesChange).toHaveBeenCalledWith(["EcoRI", "BamHI"]);
   });
 
-  it("calls onEnzymesChange to remove enzyme when selected enzyme is clicked", () => {
+  it("calls onEnzymesChange to remove enzyme when unchecked", () => {
     const onEnzymesChange = vi.fn();
     render(
       <ViewerControls
@@ -176,6 +178,9 @@ describe("ViewerControls", () => {
       />,
     );
 
+    // Open popup
+    fireEvent.click(screen.getByText("Enzymes (2)"));
+    // Toggle EcoRI off
     fireEvent.click(screen.getByText("EcoRI"));
     expect(onEnzymesChange).toHaveBeenCalledWith(["BamHI"]);
   });

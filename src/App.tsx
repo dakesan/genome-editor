@@ -287,8 +287,10 @@ function App() {
     <div className="app" role="application" onDragOver={handleDragOver} onDrop={handleDrop}>
       <header className="app-header">
         <h1>Genome Editor</h1>
+        <span className="header-divider" />
         <FileLoader onFileLoad={handleFileLoad} isLoading={isLoading} />
         {fileName && <span className="file-name">{fileName}</span>}
+        <span className="header-divider" />
         <ViewerControls
           viewerType={viewerType}
           onViewerTypeChange={setViewerType}
@@ -296,8 +298,8 @@ function App() {
           onEnzymesChange={setEnzymes}
         />
         {renderMetrics && (
-          <span className="file-name">
-            Render: {renderMetrics.duration.toFixed(0)}ms ({backend})
+          <span className="render-metrics">
+            {renderMetrics.duration.toFixed(0)}ms ({backend})
           </span>
         )}
         <button

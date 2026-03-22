@@ -1,4 +1,4 @@
-// Floating toolbar that appears when a sequence region is selected.
+// Floating toolbar that appears above the selected sequence region.
 // Shows actions like "Add Annotation" and "Delete Selection".
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,7 +19,9 @@ export function ContextMenu() {
   const [annotationName, setAnnotationName] = useState("");
   const [annotationType, setAnnotationType] = useState("misc_feature");
   const [annotationDirection, setAnnotationDirection] = useState(1);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   const selection = useGenomeStore((s) => s.selection);
   const parsedSequence = useGenomeStore((s) => s.parsedSequence);
@@ -36,6 +38,43 @@ export function ContextMenu() {
   const selStart = hasSelection ? Math.min(selection.start as number, selection.end as number) : 0;
   const selEnd = hasSelection ? Math.max(selection.start as number, selection.end as number) : 0;
   const selLength = selEnd - selStart;
+
+  // Position the toolbar above the selection edge in the linear viewer.
+  // Falls back to a fixed position if no selection edge is found.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: must reposition when selection range changes
+  useEffect(() => {
+    if (!hasSelection) {
+      setPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      // Find the first visible selection edge element
+      const edge = document.querySelector(".la-vz-selection-edge");
+      if (edge) {
+        const rect = edge.getBoundingClientRect();
+        const toolbarHeight = toolbarRef.current?.offsetHeight ?? 36;
+        setPosition({
+          top: rect.top - toolbarHeight - 8,
+          left: Math.max(8, rect.left),
+        });
+      } else {
+        // Fallback: center near top of the viewer
+        const viewer = document.querySelector(".viewer-wrapper");
+        if (viewer) {
+          const vRect = viewer.getBoundingClientRect();
+          setPosition({
+            top: vRect.top + 8,
+            left: vRect.left + vRect.width / 2 - 120,
+          });
+        }
+      }
+    };
+
+    // Debounce initial positioning to let SeqViz render the selection
+    const timer = setTimeout(updatePosition, 50);
+    return () => clearTimeout(timer);
+  }, [hasSelection, selStart, selEnd]);
 
   // Reset form when selection changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset must trigger on position change
@@ -105,10 +144,14 @@ export function ContextMenu() {
     setParsedSequence,
   ]);
 
-  if (!hasSelection) return null;
+  if (!hasSelection || !position) return null;
 
   return (
-    <div className="selection-toolbar">
+    <div
+      ref={toolbarRef}
+      className="selection-toolbar"
+      style={{ top: position.top, left: position.left }}
+    >
       <div className="selection-toolbar-info">
         {selStart + 1}..{selEnd} ({selLength} bp)
       </div>
