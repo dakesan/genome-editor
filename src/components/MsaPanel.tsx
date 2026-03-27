@@ -1,12 +1,8 @@
 // Multiple Sequence Alignment panel with input form and colored alignment viewer.
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  type AlignedSequence,
-  buildConsensus,
-  type MsaStatus,
-  useMsaAlignment,
-} from "../hooks/useMsaAlignment";
+import { buildConsensus, type MsaStatus, useMsaAlignment } from "../hooks/useMsaAlignment";
+import type { AlignedSequence } from "../types/alignment";
 
 const EXAMPLE_FASTA = `>human_HBB
 ATGGTGCATCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTG

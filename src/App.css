@@ -11,6 +11,12 @@
   --msa-color-g: #ff9800;
   --msa-color-c: #2196f3;
   --msa-color-gap: #3a3a3a;
+  --alignment-color-substitution: #e53e3e;
+  --alignment-color-insertion: #9f7aea;
+  --alignment-color-deletion: #718096;
+  --alignment-color-synonymous: #38a169;
+  --alignment-color-missense: #e53e3e;
+  --alignment-color-nonsense: #9b2c2c;
   --color-bg: #1e1e1e;
   --color-header: #252526;
   --color-surface: #2d2d2d;
@@ -56,6 +62,12 @@
   --msa-color-g: #ffa726;
   --msa-color-c: #42a5f5;
   --msa-color-gap: #e0e0e0;
+  --alignment-color-substitution: #e53e3e;
+  --alignment-color-insertion: #805ad5;
+  --alignment-color-deletion: #a0aec0;
+  --alignment-color-synonymous: #38a169;
+  --alignment-color-missense: #e53e3e;
+  --alignment-color-nonsense: #9b2c2c;
   --color-bg: #fafafa;
   --color-header: #ffffff;
   --color-surface: #f4f4f5;
@@ -1736,4 +1748,319 @@ text.la-vz-translation-amino-acid-label {
 .msa-consensus-row .msa-seq-residues {
   color: var(--color-primary);
   font-weight: 600;
+}
+
+/* ================================================================
+ * Mode tabs (Editor / Alignment switcher)
+ * ================================================================ */
+
+.mode-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  padding: 2px;
+}
+
+.mode-tab {
+  padding: 4px 12px;
+  border: none;
+  border-radius: calc(var(--border-radius) - 1px);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.mode-tab:hover {
+  color: var(--color-text);
+  background: var(--color-button-hover);
+}
+
+.mode-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ================================================================
+ * Alignment Mode
+ * ================================================================ */
+
+.alignment-mode {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.alignment-input-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.alignment-mode:not(.alignment-mode-has-result) .alignment-input-panel {
+  flex: 1;
+  justify-content: center;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.alignment-input-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.alignment-input-header h3 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.alignment-mode-has-result .alignment-input-panel {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-header);
+}
+
+.alignment-mode-has-result .alignment-input-panel .msa-input-textarea {
+  min-height: 60px;
+  max-height: 100px;
+  resize: vertical;
+}
+
+.alignment-input-textarea {
+  min-height: 160px;
+}
+
+.alignment-views {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.alignment-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+}
+
+/* ================================================================
+ * Alignment Detail (horizontal scroll MSA viewer)
+ * ================================================================ */
+
+.alignment-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.alignment-detail-container {
+  flex: 1;
+  overflow: auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.alignment-detail-scroll {
+  display: inline-block;
+  min-width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.alignment-detail-row {
+  display: flex;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.alignment-row-name {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  padding-right: var(--spacing-sm);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+.alignment-row-residues {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0;
+}
+
+.alignment-ruler-row {
+  opacity: 0.5;
+}
+
+.alignment-ruler-text {
+  color: var(--color-text-muted);
+  font-size: calc(var(--font-size-xs) * 0.85);
+}
+
+.alignment-ref-row {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+
+.alignment-ref-row .alignment-row-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.alignment-consensus-row {
+  border-top: 1px solid var(--color-border);
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+.alignment-consensus-row .alignment-row-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.alignment-consensus-text {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.variant-substitution {
+  font-weight: 700;
+}
+
+/* ================================================================
+ * Alignment Overview (reference + query mapping bars)
+ * ================================================================ */
+
+.alignment-overview {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-header);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.alignment-overview-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  height: 20px;
+}
+
+.alignment-overview-label {
+  flex-shrink: 0;
+  width: 100px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.alignment-overview-bar {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.alignment-overview-ref-bar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.alignment-overview-orf {
+  position: absolute;
+  top: 2px;
+  height: calc(100% - 4px);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.alignment-overview-query-track {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.alignment-overview-query-bar {
+  position: absolute;
+  top: 1px;
+  height: calc(100% - 2px);
+  border-radius: 2px;
+  transition: opacity var(--transition-fast);
+}
+
+.alignment-overview-query-bar:hover {
+  opacity: 1 !important;
+}
+
+/* ================================================================
+ * Amino acid effect badges
+ * ================================================================ */
+
+.alignment-aa-row {
+  opacity: 0.85;
+}
+
+.alignment-aa-label {
+  font-style: italic;
+  font-size: calc(var(--font-size-xs) * 0.9) !important;
+}
+
+.aa-effect-summary {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.aa-effect-badge {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: calc(var(--font-size-xs) * 0.9);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.aa-synonymous {
+  background: var(--alignment-color-synonymous);
+  color: #fff;
+}
+
+.aa-missense {
+  background: var(--alignment-color-missense);
+  color: #fff;
+}
+
+.aa-nonsense {
+  background: var(--alignment-color-nonsense);
+  color: #fff;
 }

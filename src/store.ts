@@ -1,6 +1,7 @@
 // Centralized application state powered by Zustand.
 
 import { create } from "zustand";
+import type { AlignedSequence, AppMode } from "./types/alignment";
 import type { SearchRange, SeqSelection } from "./types/selection";
 import type { ParsedSequence, SequenceAnnotation, ViewerType } from "./types/sequence";
 import type { WasmCutSite, WasmOrf } from "./types/wasm";
@@ -41,6 +42,11 @@ interface GenomeStore {
   searchResults: SearchRange[];
   searchCurrentIndex: number;
 
+  // App mode
+  appMode: AppMode;
+  alignmentResult: AlignedSequence[] | null;
+  alignmentInput: string;
+
   // Layout
   sidebarOpen: boolean;
 
@@ -68,6 +74,9 @@ interface GenomeStore {
   nextSearchResult: () => void;
   prevSearchResult: () => void;
   clearSearch: () => void;
+  setAppMode: (mode: AppMode) => void;
+  setAlignmentResult: (result: AlignedSequence[] | null) => void;
+  setAlignmentInput: (input: string) => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   applySequenceEdit: (edit: SequenceEdit) => void;
@@ -93,6 +102,9 @@ const initialState = {
   searchMismatch: 0,
   searchResults: [] as SearchRange[],
   searchCurrentIndex: 0,
+  appMode: "editor" as AppMode,
+  alignmentResult: null as AlignedSequence[] | null,
+  alignmentInput: "",
   sidebarOpen: false,
   editHistory: [] as HistoryEntry[],
   editHistoryIndex: -1,
@@ -131,6 +143,9 @@ export const useGenomeStore = create<GenomeStore>((set) => ({
     })),
   clearSearch: () =>
     set({ searchQuery: "", searchMismatch: 0, searchResults: [], searchCurrentIndex: 0 }),
+  setAppMode: (mode) => set({ appMode: mode }),
+  setAlignmentResult: (result) => set({ alignmentResult: result }),
+  setAlignmentInput: (input) => set({ alignmentInput: input }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 

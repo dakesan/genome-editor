@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { getBackend } from "./backend";
+import { AlignmentMode } from "./components/AlignmentMode";
 import { AnnotationListPanel } from "./components/AnnotationListPanel";
 import { ContextMenu } from "./components/ContextMenu";
 import { CutSiteList } from "./components/CutSiteList";
 import { EditPanel } from "./components/EditPanel";
 import { FileLoader } from "./components/FileLoader";
-import { MsaPanel } from "./components/MsaPanel";
+import { ModeTabs } from "./components/ModeTabs";
 import { SearchPanel } from "./components/SearchPanel";
 import { SelectionInfoPanel } from "./components/SelectionInfoPanel";
 import { SeqViewer } from "./components/SeqViewer";
@@ -29,6 +30,8 @@ function App() {
   const { theme, toggleTheme } = useTheme();
   const { parsedSequence, isLoading, error, parseFile, backend } = useGenBankParser();
 
+  const appMode = useGenomeStore((s) => s.appMode);
+  const setAppMode = useGenomeStore((s) => s.setAppMode);
   const viewerType = useGenomeStore((s) => s.viewerType);
   const enzymes = useGenomeStore((s) => s.enzymes);
   const fileName = useGenomeStore((s) => s.fileName);
@@ -48,7 +51,6 @@ function App() {
 
   const [saveFormat, setSaveFormat] = useState<"genbank" | "fasta">("genbank");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [msaPanelOpen, setMsaPanelOpen] = useState(false);
 
   const { renderMetrics, startMeasure, stopMeasure } = usePerformance("SeqViewer");
 
@@ -297,37 +299,37 @@ function App() {
       <header className="app-header">
         <h1>Genome Editor</h1>
         <span className="header-divider" />
+        <ModeTabs mode={appMode} onModeChange={setAppMode} />
+        <span className="header-divider" />
         <FileLoader onFileLoad={handleFileLoad} isLoading={isLoading} />
         {fileName && <span className="file-name">{fileName}</span>}
-        <span className="header-divider" />
-        <ViewerControls
-          viewerType={viewerType}
-          onViewerTypeChange={setViewerType}
-          selectedEnzymes={enzymes}
-          onEnzymesChange={setEnzymes}
-        />
-        {renderMetrics && (
-          <span className="render-metrics">
-            {renderMetrics.duration.toFixed(0)}ms ({backend})
-          </span>
+        {appMode === "editor" && (
+          <>
+            <span className="header-divider" />
+            <ViewerControls
+              viewerType={viewerType}
+              onViewerTypeChange={setViewerType}
+              selectedEnzymes={enzymes}
+              onEnzymesChange={setEnzymes}
+            />
+            {renderMetrics && (
+              <span className="render-metrics">
+                {renderMetrics.duration.toFixed(0)}ms ({backend})
+              </span>
+            )}
+          </>
         )}
-        <button
-          type="button"
-          className={`msa-toggle ${msaPanelOpen ? "active" : ""}`}
-          onClick={() => setMsaPanelOpen((v) => !v)}
-          title="Multiple Sequence Alignment"
-        >
-          MSA
-        </button>
-        <button
-          type="button"
-          className="sidebar-toggle"
-          onClick={toggleSidebar}
-          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-          title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          {sidebarOpen ? "\u2715" : "\u2630"}
-        </button>
+        {appMode === "editor" && (
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            {sidebarOpen ? "\u2715" : "\u2630"}
+          </button>
+        )}
         <button
           type="button"
           className="theme-toggle"
@@ -395,43 +397,48 @@ function App() {
       )}
 
       <div className="app-body">
-        <div className="main-content">
-          <MsaPanel
-            open={msaPanelOpen}
-            onToggle={() => setMsaPanelOpen(false)}
-            currentSequence={parsedSequence}
-          />
-          {parsedSequence ? (
-            <>
-              <div className="viewer-wrapper">
-                <SeqViewer
-                  sequence={parsedSequence}
-                  viewerType={viewerType}
-                  enzymes={enzymes}
-                  translations={translations}
-                  onSelection={handleSelection}
-                  copyEvent={handleCopyEvent}
-                  search={searchProp}
-                  onSearch={handleSearch}
-                  highlights={searchHighlights}
-                  selection={searchSelection}
-                />
-                <ContextMenu />
-              </div>
-              <CutSiteList cutSites={cutSites} isLoading={cutSitesLoading} />
-            </>
-          ) : (
-            <div className="app-status">
-              {isLoading ? "Parsing sequence..." : "Load a GenBank or FASTA file to get started"}
+        {appMode === "alignment" ? (
+          <div className="main-content">
+            <AlignmentMode />
+          </div>
+        ) : (
+          <>
+            <div className="main-content">
+              {parsedSequence ? (
+                <>
+                  <div className="viewer-wrapper">
+                    <SeqViewer
+                      sequence={parsedSequence}
+                      viewerType={viewerType}
+                      enzymes={enzymes}
+                      translations={translations}
+                      onSelection={handleSelection}
+                      copyEvent={handleCopyEvent}
+                      search={searchProp}
+                      onSearch={handleSearch}
+                      highlights={searchHighlights}
+                      selection={searchSelection}
+                    />
+                    <ContextMenu />
+                  </div>
+                  <CutSiteList cutSites={cutSites} isLoading={cutSitesLoading} />
+                </>
+              ) : (
+                <div className="app-status">
+                  {isLoading
+                    ? "Parsing sequence..."
+                    : "Load a GenBank or FASTA file to get started"}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <Sidebar open={sidebarOpen}>
-          <SearchPanel />
-          <SelectionInfoPanel selection={selection} sequence={parsedSequence} />
-          <EditPanel />
-          <AnnotationListPanel />
-        </Sidebar>
+            <Sidebar open={sidebarOpen}>
+              <SearchPanel />
+              <SelectionInfoPanel selection={selection} sequence={parsedSequence} />
+              <EditPanel />
+              <AnnotationListPanel />
+            </Sidebar>
+          </>
+        )}
       </div>
     </div>
   );
