@@ -1,6 +1,6 @@
 // Horizontal-scroll MSA detail viewer with variant coloring.
 
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import type { AlignmentAnalysis } from "../hooks/useAlignmentAnalysis";
 import type {
   AlignedSequence,
@@ -53,27 +53,82 @@ export interface AlignmentDetailHandle {
 interface AlignmentDetailProps {
   sequences: AlignedSequence[];
   analysis: AlignmentAnalysis;
+  /** Called when the visible viewport changes: (startFraction, endFraction) in [0,1]. */
+  onViewportChange?: (start: number, end: number) => void;
 }
 
 export const AlignmentDetail = forwardRef<AlignmentDetailHandle, AlignmentDetailProps>(
-  function AlignmentDetail({ sequences, analysis }, ref) {
+  function AlignmentDetail({ sequences, analysis, onViewportChange }, ref) {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const scrollContentRef = useRef<HTMLDivElement>(null);
+    const residueRef = useRef<HTMLSpanElement>(null);
     const alnLen = sequences[0]?.sequence.length ?? 0;
     const maxNameLen = useMemo(
       () => Math.max(...sequences.map((s) => s.name.length), 9),
       [sequences],
     );
 
-    const scrollToAlignedPos = useCallback((pos: number) => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-      // Each character is approximately 1ch wide; estimate pixel width.
-      const charWidth = 7.2;
-      const targetScroll = pos * charWidth - container.clientWidth / 2;
-      container.scrollTo({ left: Math.max(0, targetScroll), behavior: "smooth" });
+    /**
+     * Measure the residue area using the reference row's residue span.
+     * Returns the left offset (nameWidth) and total pixel width of the residue region.
+     */
+    const measureResidueArea = useCallback(() => {
+      const content = scrollContentRef.current;
+      const residue = residueRef.current;
+      if (!content || !residue) return null;
+      const contentRect = content.getBoundingClientRect();
+      const residueRect = residue.getBoundingClientRect();
+      // Both rects shift equally with scroll, so the difference is the stable name-column offset.
+      const nameWidth = residueRect.left - contentRect.left;
+      // getBoundingClientRect().width works reliably for inline elements with nowrap.
+      const residueWidth = residueRect.width;
+      return { nameWidth, residueWidth };
     }, []);
 
+    const scrollToAlignedPos = useCallback(
+      (pos: number) => {
+        const container = scrollContainerRef.current;
+        if (!container || alnLen === 0) return;
+        const m = measureResidueArea();
+        if (!m) return;
+        // Target: the fraction of the residue area for this position.
+        const fraction = pos / alnLen;
+        const targetX = m.nameWidth + fraction * m.residueWidth;
+        const targetScroll = targetX - container.clientWidth / 2;
+        container.scrollTo({ left: Math.max(0, targetScroll), behavior: "smooth" });
+      },
+      [alnLen, measureResidueArea],
+    );
+
     useImperativeHandle(ref, () => ({ scrollToAlignedPos }), [scrollToAlignedPos]);
+
+    // Report viewport fraction on scroll — fraction of *residue area* only.
+    const reportViewport = useCallback(() => {
+      const container = scrollContainerRef.current;
+      if (!container || !onViewportChange) return;
+      const m = measureResidueArea();
+      if (!m || m.residueWidth === 0) return;
+      // How much of the residue area is visible?
+      const visibleLeft = container.scrollLeft - m.nameWidth;
+      const visibleRight = visibleLeft + container.clientWidth;
+      const start = Math.max(0, visibleLeft / m.residueWidth);
+      const end = Math.min(1, visibleRight / m.residueWidth);
+      onViewportChange(start, end);
+    }, [onViewportChange, measureResidueArea]);
+
+    useEffect(() => {
+      const container = scrollContainerRef.current;
+      if (!container || !onViewportChange) return;
+      container.addEventListener("scroll", reportViewport, { passive: true });
+      // Report initial viewport.
+      reportViewport();
+      const ro = new ResizeObserver(reportViewport);
+      ro.observe(container);
+      return () => {
+        container.removeEventListener("scroll", reportViewport);
+        ro.disconnect();
+      };
+    }, [reportViewport, onViewportChange]);
 
     // Position ruler
     const ruler = useMemo(() => {
@@ -109,14 +164,14 @@ export const AlignmentDetail = forwardRef<AlignmentDetailHandle, AlignmentDetail
     return (
       <div className="alignment-detail">
         <div className="alignment-detail-container" ref={scrollContainerRef}>
-          <div className="alignment-detail-scroll">
+          <div className="alignment-detail-scroll" ref={scrollContentRef}>
             {/* Ruler row */}
             <div className="alignment-detail-row alignment-ruler-row">
               <span className="alignment-row-name" style={{ minWidth: `${maxNameLen + 1}ch` }} />
               <span className="alignment-row-residues alignment-ruler-text">{ruler}</span>
             </div>
 
-            {/* Reference row */}
+            {/* Reference row — residueRef measures the actual residue area width */}
             <div className="alignment-detail-row alignment-ref-row">
               <span
                 className="alignment-row-name"
@@ -125,14 +180,30 @@ export const AlignmentDetail = forwardRef<AlignmentDetailHandle, AlignmentDetail
               >
                 {sequences[0]?.name}
               </span>
-              <span className="alignment-row-residues">
+              <span ref={residueRef} className="alignment-row-residues">
                 <ReferenceResidueRow sequence={sequences[0]?.sequence ?? ""} />
               </span>
             </div>
 
-            {/* Query rows + AA effect rows */}
+            {/* Reference AA translation row */}
+            {analysis.refTranslation && (
+              <div className="alignment-detail-row alignment-translation-row">
+                <span
+                  className="alignment-row-name alignment-translation-label"
+                  style={{ minWidth: `${maxNameLen + 1}ch` }}
+                >
+                  AA
+                </span>
+                <span className="alignment-row-residues">
+                  <TranslationResidueRow translation={analysis.refTranslation} />
+                </span>
+              </div>
+            )}
+
+            {/* Query rows + AA translation rows + AA effect rows */}
             {sequences.slice(1).map((seq, qi) => {
               const effects = analysis.aaEffects?.[qi] ?? [];
+              const qTranslation = analysis.queryTranslations?.[qi] ?? null;
               return (
                 <div key={seq.name}>
                   <div className="alignment-detail-row alignment-query-row">
@@ -147,6 +218,19 @@ export const AlignmentDetail = forwardRef<AlignmentDetailHandle, AlignmentDetail
                       <QueryResidueRow sequence={seq.sequence} variantMap={queryVariantMaps[qi]} />
                     </span>
                   </div>
+                  {qTranslation && (
+                    <div className="alignment-detail-row alignment-translation-row">
+                      <span
+                        className="alignment-row-name alignment-translation-label"
+                        style={{ minWidth: `${maxNameLen + 1}ch` }}
+                      >
+                        AA
+                      </span>
+                      <span className="alignment-row-residues">
+                        <TranslationResidueRow translation={qTranslation} />
+                      </span>
+                    </div>
+                  )}
                   {effects.length > 0 && (
                     <div className="alignment-detail-row alignment-aa-row">
                       <span
@@ -179,6 +263,86 @@ export const AlignmentDetail = forwardRef<AlignmentDetailHandle, AlignmentDetail
     );
   },
 );
+
+/** Background color by amino acid physicochemical group (ClustalX-inspired). */
+function aaColor(aa: string): string {
+  switch (aa) {
+    case "A":
+    case "V":
+    case "L":
+    case "I":
+    case "M":
+    case "P":
+      return "#d97706"; // nonpolar aliphatic — amber
+    case "F":
+    case "Y":
+    case "W":
+      return "#7c3aed"; // aromatic — violet
+    case "S":
+    case "T":
+    case "N":
+    case "Q":
+      return "#059669"; // polar uncharged — green
+    case "R":
+    case "K":
+    case "H":
+      return "#2563eb"; // positive — blue
+    case "D":
+    case "E":
+      return "#dc2626"; // negative — red
+    case "C":
+      return "#ca8a04"; // cysteine — yellow
+    case "G":
+      return "#6b7280"; // glycine — gray
+    case "*":
+      return "#7f1d1d"; // stop codon — dark red
+    default:
+      return "#4b5563"; // unknown — dark gray
+  }
+}
+
+/**
+ * Render a sparse AA translation row.
+ * Each AA letter spans 3ch (one codon width), colored by amino acid type.
+ */
+function TranslationResidueRow({ translation }: { translation: string }) {
+  const elements: React.ReactElement[] = [];
+
+  // The sparse string has AA chars only at codon-start positions; +1 and +2 are always " ".
+  let i = 0;
+  while (i < translation.length) {
+    const c = translation[i];
+
+    if (c === " ") {
+      elements.push(
+        <span
+          key={i}
+          className="msa-residue"
+          style={{ backgroundColor: "transparent", color: "transparent" }}
+        >
+          {" "}
+        </span>,
+      );
+      i++;
+      continue;
+    }
+
+    // Render as a 3ch-wide codon block colored by AA type.
+    elements.push(
+      <span
+        key={i}
+        className="msa-residue"
+        style={{ backgroundColor: aaColor(c), color: "#fff", width: "3ch" }}
+        title={c}
+      >
+        {c}
+      </span>,
+    );
+    i += 3; // skip the 2 trailing space positions of this codon
+  }
+
+  return <>{elements}</>;
+}
 
 /** Render reference sequence with base coloring. */
 function ReferenceResidueRow({ sequence }: { sequence: string }) {
