@@ -11,7 +11,7 @@ polish items (SnapGene `.dna` support, code signing, auto-update) are still open
 
 - **Viewer** — circular and linear DNA views powered by [SeqViz](https://github.com/Lattice-Automation/seqviz)
 - **File formats** — GenBank and FASTA read/write (SnapGene `.dna` not yet supported)
-- **Restriction enzymes** — full REBASE database, Aho-Corasick multi-pattern search, palindromic and non-palindromic sites, circular boundaries
+- **Restriction enzymes** — curated set of common enzymes (EcoRI, BamHI, HindIII, PstI, …) using a REBASE-style data model, Aho-Corasick multi-pattern search, palindromic and non-palindromic sites, circular boundaries
 - **ORF detection** — 6-frame scan with configurable start/stop codons, circular-aware
 - **Sequence editing** — insert / delete / replace with automatic annotation shifting, undo/redo (50 levels)
 - **Annotation management** — list, filter, add, delete features
@@ -118,6 +118,7 @@ MIT — see [`LICENSE`](LICENSE).
 ## Acknowledgements
 
 - [SeqViz](https://github.com/Lattice-Automation/seqviz) for the DNA viewer components
-- [`gb-io`](https://github.com/dlesl/gb-io), [`rust-bio`](https://github.com/rust-bio/rust-bio), and the REBASE database
+- [`gb-io`](https://github.com/dlesl/gb-io) and [`rust-bio`](https://github.com/rust-bio/rust-bio)
+- The [REBASE](http://rebase.neb.com/) project by Richard J. Roberts (NEB), whose data model inspired the enzyme table (only a small curated subset of enzymes is bundled here — REBASE itself is not redistributed)
 - [Tauri](https://tauri.app/) for the desktop shell
 - [EBI Job Dispatcher](https://www.ebi.ac.uk/Tools/webservices/) for Clustal Omega / MAFFT MSA
